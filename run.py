@@ -3,7 +3,7 @@ import torch
 import os
 import transformers
 from model_utils import get_model, get_model_safe_tensors
-from eval_utils import DeepSeekEvaluator, Qwen3MoeEvaluator, MixtralEvaluator, OlmoeEvaluator
+from eval_utils import DeepSeekEvaluator, Qwen3MoeEvaluator, MixtralEvaluator, OlmoeEvaluator, Qwen2MoeEvaluator
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -31,6 +31,7 @@ def parse_args():
     parser.add_argument('--eval_ppl', action='store_true', default=False, help='') 
     parser.add_argument('--prune_experts', type=lambda x: [tuple(map(int, item.split(','))) for item in x.split(';')],default=None, help='Pass a list of tuples, each in the format "layer,expert_index" separated by semicolons, e.g., "1,-1;2,3". -1 indicates shared experts.')
     parser.add_argument('--prune_super_experts', action='store_true', default=False, help='') 
+    parser.add_argument('--profile_expert_frequency', action='store_true', default=False, help='profile expert activation frequency and token counts')
     args = parser.parse_args()
     return args
 
@@ -53,6 +54,8 @@ def main(args):
         evaluator = DeepSeekEvaluator(model, tokenizer, model_st, dev, args)
     elif model_name in ['Qwen3MoeForCausalLM']:
         evaluator = Qwen3MoeEvaluator(model, tokenizer, model_st, dev, args)
+    elif model_name in ["Qwen2MoeForCausalLM"]:
+        evaluator = Qwen2MoeEvaluator(model, tokenizer, model_st, dev, args)
     elif model_name in ['MixtralForCausalLM']:
         evaluator = MixtralEvaluator(model, tokenizer, model_st, dev, args)
     elif model_name in ['OlmoeForCausalLM']:
@@ -78,7 +81,9 @@ def main(args):
             massive_experts_info_path = evaluator.massive_experts_profiler(args.vis_massive_experts_line_plot)
         super_experts_info_path = evaluator.super_experts_profiler(args.include_layers, args.vis_super_experts_line_plot)
         print(f"Super Experts Info is in {super_experts_info_path}")
-    
+    if args.profile_expert_frequency:
+        frequency_info_path = evaluator.expert_frequency_profiler()
+        print(f"Expert Frequency Info is in {frequency_info_path}")
     # ppl test
     if args.eval_ppl:
         if args.prune_super_experts:

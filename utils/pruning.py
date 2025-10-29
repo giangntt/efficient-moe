@@ -7,14 +7,14 @@ from safetensors.torch import save_file
 from tqdm import tqdm
 
 # The name or local path of the Hugging Face model you want to prune.
-MODEL_TO_PRUNE = "/home/sora/llm/moe/ckpt/DeepSeek-V2-Lite"
+MODEL_TO_PRUNE = "/home/hoquocthienanh/gstar-individual-project/ckpt/Qwen1.5"
 
 # The path to your JSON file containing the list of Super Experts.
-SUPER_EXPERTS_FILE = "/home/sora/llm/moe/output_experts/deepseek_pre/deepseek_pre_wiki/super_experts_info/super_experts_report/Super Experts Report.json"
+SUPER_EXPERTS_FILE = "/home/hoquocthienanh/gstar-individual-project/output/qwen/super_experts_info/super_experts_report/Super Experts Report copy.json"
 
 # The directory where the new, pruned model will be saved.
 # Example: "./pruned_model_output"
-OUTPUT_DIRECTORY = "/home/sora/.cache/huggingface/DeepSeek-V2-Lite-Pruned"
+OUTPUT_DIRECTORY = "/home/hoquocthienanh/gstar-individual-project/ckpt/Qwen1.5-Pruned"
 
 # ===================================================================
 # Script Logic
@@ -31,6 +31,15 @@ def get_weight_key(model_architecture, layer_index, expert_index):
     elif "DeepseekV2ForCausalLM" in model_architecture or "Qwen3MoeForCausalLM" in model_architecture or "OlmoeForCausalLM" in model_architecture:
         # DeepSeek, Qwen2-MoE, and OlmoE use a standard gate/up/down projection setup
         return f"model.layers.{layer_index}.mlp.experts.{expert_index}.down_proj.weight"
+    elif "Qwen2MoeForCausalLM" in model_architecture:
+        # Qwen2-MoE has both routed experts and a shared expert
+        print(type(expert_index))
+        if expert_index == '-1':
+            # Shared expert (singular, not plural)
+            return f"model.layers.{layer_index}.mlp.shared_expert.down_proj.weight"
+        else:
+            # Routed experts (0-59 for Qwen2-1.5B-A2.7B)
+            return f"model.layers.{layer_index}.mlp.experts.{expert_index}.down_proj.weight"
     else:
         # Add other model architectures here later
         raise NotImplementedError(

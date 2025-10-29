@@ -36,6 +36,8 @@ class BaseEvaluator:
         self.layer_wise_save_path_of_super = os.path.join(self.super_experts_info_path, "layer_wise_analysis")
         self.expert_wise_save_path_of_super = os.path.join(self.super_experts_info_path, "expert_wise_analysis")
         self.super_experts_report_path = os.path.join(self.super_experts_info_path, "super_experts_report")
+        self.expert_frequency_info_path = os.path.join(self.args.save_path, "expert_frequency_info")
+        self.expert_frequency_report_path = os.path.join(self.expert_frequency_info_path, "expert_frequency_report.json")
         self.prune_experts=None
         self.SE_list = []
 
@@ -49,7 +51,7 @@ class BaseEvaluator:
     def _load_layer_weight(self, layer_idx):
         raise NotImplementedError("Subclasses should implement the evaluate_ppl method.")
     
-    def _layer_wise_evaluate(self, require_position_embeddings, require_hook):
+    def _layer_wise_evaluate(self, require_position_embeddings, require_hook, require_frequency_hook=False):
         dev = self.dev
         dtype = self.dtype
         use_cache = self.model.config.use_cache
@@ -154,7 +156,29 @@ class BaseEvaluator:
                     layer_index = name.split('.')[2]
                     layer_type = name
                     module.register_forward_hook(experts_down_proj_hook(layer_index, layer_type, name))
+                    
+        if require_frequency_hook:
+            self.expert_activation_counters = defaultdict(lambda: {'activation_count': 0, 'token_count': 0})
+            
+            def expert_frequency_hook(layer_type_name):
+                def hook(module, input, output):
+                    # input[0].shape[0] is the number of tokens routed to this expert in this batch
+                    token_count_for_batch = input[0].shape[0]
+                    if token_count_for_batch > 0:
+                        # 'activation_count' logs how many forward passes (batches) included this expert
+                        self.expert_activation_counters[layer_type_name]['activation_count'] += 1
+                    # 'token_count' logs the total number of tokens processed by this expert
+                    self.expert_activation_counters[layer_type_name]['token_count'] += token_count_for_batch
+                return hook
 
+            for name, module in self.model.named_modules():
+                # We hook the same modules as the outlier profiler: the down-projection layer.
+                # Its input shape reveals how many tokens were routed to it.
+                # Added 'w3' for Mixtral down-projection.
+                if "down" in name or "w2" in name or "w3" in name: 
+                    # Ensure we're only hooking expert modules, not other down_projs
+                    if "experts" in name or "shared_expert" in name:
+                        module.register_forward_hook(expert_frequency_hook(name))
         # load layer and forward
         if not require_position_embeddings:
             for i in tqdm(range(len(layers)), desc="(Eval) Layers"):
@@ -182,6 +206,8 @@ class BaseEvaluator:
 
         if require_hook:
             return input_max_value, output_max_value, input_max_channel_index, output_max_channel_index
+        if require_frequency_hook:
+            return self.expert_activation_counters
         else:
             return nbatches, inps, input_ids, use_cache
 
@@ -650,7 +676,106 @@ class BaseEvaluator:
         for rank, item in enumerate(Super_Experts, start=1):
             item['rank'] = rank
         return Super_Experts
+    def _save_expert_frequency_to_json(self, activation_counters):
+        """Processes the raw activation counts and saves a structured JSON report."""
+        os.makedirs(self.expert_frequency_info_path, exist_ok=True)
+        
+        all_experts_flat = []
+        layer_wise_data = defaultdict(list)
 
+        # Parse the module names to create a structured list
+        for full_name, counts in activation_counters.items():
+            parts = full_name.split('.')
+            try:
+                layer_index = int(parts[2])
+                expert_id_num = None
+                is_shared = False
+
+                if 'shared_experts' in full_name or 'shared_expert' in full_name:
+                    expert_id_num = -1 # Use -1 convention from your prune_args
+                    is_shared = True
+                elif 'experts' in full_name:
+                    # Find the index of 'experts' and get the next part
+                    expert_index_pos = parts.index('experts') + 1
+                    expert_id_num = int(parts[expert_index_pos])
+
+                if expert_id_num is None:
+                    continue # Not a module we're tracking (e.g., non-expert down_proj)
+
+                expert_info = {
+                    'layer_index': layer_index,
+                    'expert_index': expert_id_num,
+                    'is_shared': is_shared,
+                    'full_module_name': full_name,
+                    'activation_count': counts['activation_count'], # How many batches it was used in
+                    'token_count': counts['token_count'] # Total tokens processed
+                }
+                all_experts_flat.append(expert_info)
+                layer_wise_data[layer_index].append(expert_info)
+
+            except (ValueError, IndexError):
+                print(f"Warning: Could not parse module name {full_name}")
+                continue
+        
+        # --- Process Statistics ---
+        if not all_experts_flat:
+            print("No expert activations were recorded. Check hook logic.")
+            return
+
+        # Sort all experts globally by token count
+        all_experts_flat.sort(key=lambda x: x['token_count'], reverse=True)
+        
+        total_tokens = sum(e['token_count'] for e in all_experts_flat)
+        
+        # Add token percentage to each expert
+        for e in all_experts_flat:
+            e['token_percentage'] = (e['token_count'] / total_tokens) * 100 if total_tokens > 0 else 0
+        
+        num_experts_to_report = min(20, len(all_experts_flat)) # Report top/bottom 20
+
+        stats = {
+            'total_tokens_processed_by_experts': total_tokens,
+            'total_unique_experts_activated': len(all_experts_flat),
+            'most_frequent_experts_by_token': all_experts_flat[:num_experts_to_report],
+            'least_frequent_experts_by_token': all_experts_flat[-num_experts_to_report:][::-1], # Sliced and reversed
+            'experts_with_zero_tokens': [e for e in all_experts_flat if e['token_count'] == 0]
+        }
+
+        # --- Process Layer-wise ---
+        processed_layer_wise = []
+        for layer_index in sorted(layer_wise_data.keys()):
+            experts_in_layer = layer_wise_data[layer_index]
+            # Sort experts within this layer by token count
+            experts_in_layer.sort(key=lambda x: x['token_count'], reverse=True)
+            processed_layer_wise.append({
+                'layer_index': layer_index,
+                'experts': experts_in_layer
+            })
+
+        # Combine stats and per-layer data into one report
+        report = {
+            'statistics_summary': stats,
+            'layer_wise_breakdown': processed_layer_wise
+        }
+
+        # Save the report
+        with open(self.expert_frequency_report_path, 'w') as f:
+            json.dump(report, f, indent=4)
+        
+        print(f"Expert frequency report saved to {self.expert_frequency_report_path}")
+
+    def expert_frequency_profiler(self):
+        """Public method to run the expert frequency analysis."""
+        os.makedirs(self.expert_frequency_info_path, exist_ok=True)
+        print("Starting expert frequency profiling...")
+        activation_counters = self._layer_wise_evaluate(
+            self.require_position_embeddings, 
+            require_hook=False, 
+            require_frequency_hook=True
+        )
+        print("Frequency data collected. Generating report...")
+        self._save_expert_frequency_to_json(activation_counters)
+        return self.expert_frequency_info_path
 
     def evaluate_ppl(self, require_hook, prune_experts, prune_SE):
         self.prune_experts=prune_experts
@@ -658,7 +783,7 @@ class BaseEvaluator:
             self._generate_SE_list()
         dev = self.dev
         dtype = self.dtype
-        nbatches, inps, input_ids, use_cache = self._layer_wise_evaluate(self.require_position_embeddings, require_hook)
+        nbatches, inps, input_ids, use_cache = self._layer_wise_evaluate(self.require_position_embeddings, require_hook, require_frequency_hook=False)
         self.model.eval()
 
         # load norm and lm_head
@@ -693,7 +818,7 @@ class BaseEvaluator:
 
     def outliers_profiler(self, vis_outliers_heatmap, require_hook=True):
         os.makedirs(self.outliers_info_path, exist_ok=True)
-        input_max_value, output_max_value, input_max_channel_index, output_max_channel_index = self._layer_wise_evaluate(self.require_position_embeddings, require_hook)
+        input_max_value, output_max_value, input_max_channel_index, output_max_channel_index = self._layer_wise_evaluate(self.require_position_embeddings, require_hook, require_frequency_hook=False)
         self._outliers_info_to_json(self.outliers_info_path, input_max_value, output_max_value, input_max_channel_index, output_max_channel_index)
         if vis_outliers_heatmap:
             self._vis_outliers_heatmap(self.outliers_info_path, self.num_dense_layers, self.total_layers)
@@ -832,7 +957,119 @@ class DeepSeekEvaluator(BaseEvaluator):
 
         return layer
 
+class Qwen2MoeEvaluator(BaseEvaluator):
+    def __init__(self, model, tokenizer, model_st, dev, args):
+        super().__init__(model, tokenizer, model_st, dev, args) 
+        self.require_position_embeddings = True  # Qwen2Moe uses rotary embeddings
 
+    def _load_layer_weight(self, layer_idx):
+        if self.prune_experts is not None:
+            prune_list_router = [f"model.layers.{layer}.mlp.experts.{expert}" for layer, expert in self.prune_experts if int(expert) != -1]   
+        else:
+            prune_list_router = []
+        if self.SE_list:
+            for layer, expert in self.SE_list:
+                if int(expert) != -1:
+                    prune_list_router.append(f"model.layers.{layer}.mlp.experts.{expert}")
+        
+        layer_key = f"model.layers.{layer_idx}"
+        layer = self._get_module(self.model, layer_key)
+        dev = self.dev
+        dtype = self.dtype
+
+        # Initialize meta tensor of layernorm
+        W = layer.input_layernorm.to_empty(device=dev).to(dtype=dtype)
+        W.weight.data.copy_(self.model_st[layer_key + '.input_layernorm.weight'].to(device=dev, dtype=dtype))
+        W = layer.post_attention_layernorm.to_empty(device=dev).to(dtype=dtype)
+        W.weight.data.copy_(self.model_st[layer_key + '.post_attention_layernorm.weight'].to(device=dev, dtype=dtype))
+
+        # Initialize meta tensor of attention (standard attention, not MLA)
+        W = layer.self_attn.q_proj.to_empty(device=dev).to(dtype=dtype)
+        W.weight.data.copy_(self.model_st[layer_key + '.self_attn.q_proj.weight'].to(device=dev, dtype=dtype))
+        if hasattr(layer.self_attn.q_proj, 'bias') and layer.self_attn.q_proj.bias is not None:
+            W.bias.data.copy_(self.model_st[layer_key + '.self_attn.q_proj.bias'].to(device=dev, dtype=dtype))
+        
+        W = layer.self_attn.k_proj.to_empty(device=dev).to(dtype=dtype)
+        W.weight.data.copy_(self.model_st[layer_key + '.self_attn.k_proj.weight'].to(device=dev, dtype=dtype))
+        if hasattr(layer.self_attn.k_proj, 'bias') and layer.self_attn.k_proj.bias is not None:
+            W.bias.data.copy_(self.model_st[layer_key + '.self_attn.k_proj.bias'].to(device=dev, dtype=dtype))
+        
+        W = layer.self_attn.v_proj.to_empty(device=dev).to(dtype=dtype)
+        W.weight.data.copy_(self.model_st[layer_key + '.self_attn.v_proj.weight'].to(device=dev, dtype=dtype))
+        if hasattr(layer.self_attn.v_proj, 'bias') and layer.self_attn.v_proj.bias is not None:
+            W.bias.data.copy_(self.model_st[layer_key + '.self_attn.v_proj.bias'].to(device=dev, dtype=dtype))
+        
+        W = layer.self_attn.o_proj.to_empty(device=dev).to(dtype=dtype)
+        W.weight.data.copy_(self.model_st[layer_key + '.self_attn.o_proj.weight'].to(device=dev, dtype=dtype))
+
+        # Initialize meta tensor of mlp
+        if hasattr(layer.mlp, 'experts'):
+            expert_num = len(layer.mlp.experts)
+            
+            # Load experts
+            for expert_idx in range(expert_num):
+                expert_key = f"model.layers.{layer_idx}.mlp.experts.{expert_idx}"
+                expert = self._get_module(self.model, expert_key)
+                
+                W = expert.gate_proj.to_empty(device=dev).to(dtype=dtype)
+                W.weight.data.copy_(self.model_st[expert_key + '.gate_proj.weight'].to(device=dev, dtype=dtype))
+                
+                W = expert.up_proj.to_empty(device=dev).to(dtype=dtype)
+                W.weight.data.copy_(self.model_st[expert_key + '.up_proj.weight'].to(device=dev, dtype=dtype))
+                
+                W = expert.down_proj.to_empty(device=dev).to(dtype=dtype)
+                if expert_key in prune_list_router:
+                    print(f"prune {expert_key}")
+                    W.weight.data.copy_(torch.zeros_like(self.model_st[expert_key + '.down_proj.weight'].to(device=dev, dtype=dtype)))
+                else:
+                    W.weight.data.copy_(self.model_st[expert_key + '.down_proj.weight'].to(device=dev, dtype=dtype))
+
+            # Load router gate
+            router_key = f"model.layers.{layer_idx}.mlp.gate"
+            W = layer.mlp.gate.to_empty(device=dev).to(dtype=dtype)
+            W.weight.data.copy_(self.model_st[router_key + '.weight'].to(device=dev, dtype=dtype))
+
+            # Load shared expert (singular)
+            W = layer.mlp.shared_expert.gate_proj.to_empty(device=dev).to(dtype=dtype)
+            W.weight.data.copy_(self.model_st[layer_key + '.mlp.shared_expert.gate_proj.weight'].to(device=dev, dtype=dtype))
+            
+            W = layer.mlp.shared_expert.up_proj.to_empty(device=dev).to(dtype=dtype)
+            W.weight.data.copy_(self.model_st[layer_key + '.mlp.shared_expert.up_proj.weight'].to(device=dev, dtype=dtype))
+            
+            W = layer.mlp.shared_expert.down_proj.to_empty(device=dev).to(dtype=dtype)
+            
+            # Check if shared expert should be pruned
+            if self.prune_experts is not None:
+                prune_list_shared = [int(layer) for layer, expert in self.prune_experts if int(expert) == -1]
+            else:
+                prune_list_shared = []
+            for LAYER, EXPERT in self.SE_list:
+                if int(EXPERT) == -1:
+                    prune_list_shared.append(int(LAYER))
+            
+            if layer_idx in prune_list_shared:
+                print(f"prune model.layers.{layer_idx}.mlp.shared_expert")
+                W.weight.data.copy_(torch.zeros_like(self.model_st[layer_key + '.mlp.shared_expert.down_proj.weight'].to(device=dev, dtype=dtype)))
+            else:
+                W.weight.data.copy_(self.model_st[layer_key + '.mlp.shared_expert.down_proj.weight'].to(device=dev, dtype=dtype))
+
+            # Load shared expert gate
+            W = layer.mlp.shared_expert_gate.to_empty(device=dev).to(dtype=dtype)
+            W.weight.data.copy_(self.model_st[layer_key + '.mlp.shared_expert_gate.weight'].to(device=dev, dtype=dtype))
+
+        else:
+            # Dense MLP (if no experts)
+            W = layer.mlp.gate_proj.to_empty(device=dev).to(dtype=dtype)
+            W.weight.data.copy_(self.model_st[layer_key + '.mlp.gate_proj.weight'].to(device=dev, dtype=dtype))
+            
+            W = layer.mlp.up_proj.to_empty(device=dev).to(dtype=dtype)
+            W.weight.data.copy_(self.model_st[layer_key + '.mlp.up_proj.weight'].to(device=dev, dtype=dtype))
+            
+            W = layer.mlp.down_proj.to_empty(device=dev).to(dtype=dtype)
+            W.weight.data.copy_(self.model_st[layer_key + '.mlp.down_proj.weight'].to(device=dev, dtype=dtype))
+
+        return layer
+    
 class Qwen3MoeEvaluator(BaseEvaluator):
     def __init__(self, model, tokenizer, model_st, dev, args):
         super().__init__(model, tokenizer, model_st, dev, args) 
