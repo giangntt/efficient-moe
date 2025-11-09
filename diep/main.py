@@ -57,7 +57,7 @@ def parse_arguments():
     model_group = parser.add_argument_group('Model Configuration')
     model_group.add_argument(
         '--model_name', type=str, 
-        default='Qwen/Qwen1.5-MoE-A2.7B-Chat',
+        default='/home/sora/llm/moe/ckpt/Qwen1.5',
         help='HuggingFace model name or path'
     )
     model_group.add_argument(
@@ -155,7 +155,7 @@ def parse_arguments():
     )
     data_group.add_argument(
         '--batch_size', type=int,
-        default=4,
+        default=1,
         help='Training batch size'
     )
     data_group.add_argument(
@@ -404,7 +404,23 @@ def run_training(args, device):
         mask_controller=mask_controller,
         device=device
     )
-    
+    # === BẮT ĐẦU CODE MỚI ĐỂ RESUME ===
+    if args.resume_from:
+        print(f"\n[!!!] Đang tải checkpoint Giai đoạn 1 từ: {args.resume_from}")
+        try:
+            # Tải trạng thái của mask_controller từ file .pt
+            checkpoint = diep_optimizer.load_checkpoint(args.resume_from)
+            print("  Tải checkpoint thành công. Sẽ bỏ qua Giai đoạn 1.")
+            
+            # Đồng bộ target_sparsity từ checkpoint (quan trọng)
+            if 'mask_statistics' in checkpoint and 'target_sparsity' in checkpoint['mask_statistics']:
+                 mask_controller.target_sparsity = checkpoint['mask_statistics']['target_sparsity']
+                 
+        except Exception as e:
+            print(f"Lỗi khi tải checkpoint: {e}")
+            print("Tiếp tục chạy Giai đoạn 1 từ đầu...")
+            args.resume_from = None # Xóa cờ resume nếu lỗi
+    # === KẾT THÚC CODE MỚI ===
     # Progressive sparsity scheduler (optional)
     sparsity_scheduler = None
     if args.progressive_sparsity:
@@ -417,19 +433,23 @@ def run_training(args, device):
         )
     
     # Stage 1: Learn pruning configuration
-    print("\n[6/6] Stage 1: Learning Pruning Configuration...")
-    stage1_stats = diep_optimizer.stage1_learn_pruning_config(
-        train_dataloader=train_dataloader,
-        val_dataloader=val_dataloader,
-        num_epochs=args.stage1_epochs,
-        learning_rate=args.stage1_lr,
-        lambda_sparsity=args.lambda_sparsity,
-        gradient_clip=args.gradient_clip,
-        anneal_every=1,
-        save_dir=str(output_dir / "checkpoints"),
-        eval_every=args.eval_every,
-        early_stopping_patience=args.early_stopping_patience
-    )
+    if not args.resume_from:
+        # Stage 1: Learn pruning configuration
+        print("\n[6/6] Stage 1: Learning Pruning Configuration...")
+        stage1_stats = diep_optimizer.stage1_learn_pruning_config(
+            train_dataloader=train_dataloader,
+            val_dataloader=val_dataloader,
+            num_epochs=args.stage1_epochs,
+            learning_rate=args.stage1_lr,
+            lambda_sparsity=args.lambda_sparsity,
+            gradient_clip=args.gradient_clip,
+            anneal_every=1,
+            save_dir=str(output_dir / "checkpoints"),
+            eval_every=args.eval_every,
+            early_stopping_patience=args.early_stopping_patience
+        )
+    else:
+        print("\n[6/6] Bỏ qua Giai đoạn 1 (đã tải từ checkpoint).")
     
     # Get final mask statistics
     print("\n" + "=" * 70)

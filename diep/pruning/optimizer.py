@@ -11,7 +11,7 @@ from tqdm import tqdm
 import os
 import json
 from datetime import datetime
-
+import bitsandbytes.optim as bnb_optim
 
 class DiEPOptimizer:
     """
@@ -299,13 +299,48 @@ class DiEPOptimizer:
         for param in self.mask_controller.parameters():
             param.requires_grad = False
         
-        # Get trainable model parameters (only active experts)
-        trainable_params = []
-        for name, param in self.model.model.named_parameters():
-            param.requires_grad = True
-            trainable_params.append(param)
+        # === BẮT ĐẦU CODE SỬA LỖI OOM GIAI ĐOẠN 2 ===
+        print("Freezing model... preparing to unfreeze active experts.")
         
-        optimizer = torch.optim.AdamW(
+        # 1. Đóng băng TẤT CẢ tham số
+        for param in self.model.model.parameters():
+            param.requires_grad = False
+
+        trainable_params = []
+        non_expert_params_count = 0
+        
+        # 2. Mở băng các tham số chung (non-MoE)
+        # Bao gồm: self_attn, layernorm, embed_tokens, lm_head, 
+        # VÀ QUAN TRỌNG: mlp.gate, mlp.shared_expert, mlp.shared_expert_gate
+        for name, param in self.model.model.named_parameters():
+            # Bộ lọc "mlp.experts." (CÓ DẤU CHẤM) sẽ chỉ lọc ra
+            # các tham số BÊN TRONG ModuleList 60 expert
+            if "experts" not in name:
+                param.requires_grad = True
+                trainable_params.append(param)
+                non_expert_params_count += param.numel()
+        
+        print(f"  Unfrozen {non_expert_params_count/1e6:.1f}M non-expert parameters.")
+        
+        # 3. Mở băng các expert đang hoạt động (active)
+        active_expert_params_count = 0
+        for layer_idx, layer in self.model.prunable_layers.items():
+            mask = hard_masks[layer_idx]
+            active_expert_indices = (mask > 0.5).nonzero(as_tuple=True)[0]
+            
+            for expert_idx in active_expert_indices:
+                expert_module = layer.experts[expert_idx]
+                for param in expert_module.parameters():
+                    param.requires_grad = True
+                    trainable_params.append(param)
+                    active_expert_params_count += param.numel()
+
+        print(f"  Unfrozen {active_expert_params_count/1e6:.1f}M active expert parameters.")
+        
+        total_trainable_count = sum(p.numel() for p in trainable_params)
+        print(f"Total trainable parameters: {total_trainable_count/1e6:.1f}M")
+        
+        optimizer = bnb_optim.AdamW8bit(
             trainable_params,
             lr=learning_rate,
             weight_decay=0.01

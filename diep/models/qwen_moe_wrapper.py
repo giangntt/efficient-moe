@@ -21,6 +21,7 @@ class PrunableQwenMoEBlock(nn.Module):
     def __init__(
         self,
         original_moe_block: Qwen2MoeSparseMoeBlock,
+        config: Qwen2MoeConfig,
         layer_idx: int,
         num_experts: int,
         pruning_masks: Optional[torch.Tensor] = None
@@ -35,7 +36,7 @@ class PrunableQwenMoEBlock(nn.Module):
         self.gate = original_moe_block.gate
         
         # Configuration
-        self.config = original_moe_block.config
+        self.config = config
         self.top_k = self.config.num_experts_per_tok
         self.norm_topk_prob = self.config.norm_topk_prob
         
@@ -195,11 +196,12 @@ class PrunableQwenMoE(nn.Module):
             # Check if this layer has MoE
             if hasattr(layer, 'mlp') and isinstance(layer.mlp, Qwen2MoeSparseMoeBlock):
                 original_moe = layer.mlp
-                num_experts = original_moe.config.num_experts
+                num_experts = self.model.config.num_experts
                 
                 # Create prunable wrapper
                 prunable_moe = PrunableQwenMoEBlock(
                     original_moe_block=original_moe,
+                    config=self.model.config,
                     layer_idx=layer_idx,
                     num_experts=num_experts
                 )
@@ -302,6 +304,7 @@ def create_prunable_qwen_model(model_name_or_path: str, device: str = "cuda"):
         device_map=device,
         trust_remote_code=True
     )
+    model.gradient_checkpointing_enable()
     tokenizer = AutoTokenizer.from_pretrained(
         model_name_or_path,
         trust_remote_code=True
@@ -317,5 +320,6 @@ def create_prunable_qwen_model(model_name_or_path: str, device: str = "cuda"):
     
     # Wrap model
     prunable_model = PrunableQwenMoE(model, moe_layer_indices)
+    prunable_model = prunable_model.to(device)
     
     return prunable_model, tokenizer, moe_layer_indices
