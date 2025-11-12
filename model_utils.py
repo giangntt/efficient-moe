@@ -136,19 +136,11 @@ def patched_forward_dynamic_routing(self, hidden_states: torch.Tensor) -> torch.
     # Apply the mask to the routing weights
     routing_weights = routing_weights * selection_mask
 
-    # DEBUG: Log routing info for the first token to verify the logic
-    if not hasattr(self, '_debug_logged'):
-        token_idx = 0
-        print("\n" + "="*50)
-        print(f"DEBUG: Dynamic Routing for first token in batch (Layer: {self.layer_id if hasattr(self, 'layer_id') else 'Unknown'})")
-        print(f"  Threshold: {threshold}")
-        print(f"  Top-k routing weights: {routing_weights[token_idx].tolist()}")
-        print(f"  Cumulative weights: {cumulative_weights[token_idx].tolist()}")
-        print(f"  Selection mask: {selection_mask[token_idx].tolist()}")
-        num_selected = selection_mask[token_idx].sum().item()
-        print(f"  => Number of experts selected: {num_selected}")
-        print("="*50 + "\n")
-        self._debug_logged = True
+    # Track the average number of experts activated in this forward pass
+    if hasattr(self, "num_activated_experts_log"):
+        num_selected_experts_per_token = selection_mask.sum(dim=-1).float()
+        avg_experts_per_batch = num_selected_experts_per_token.mean().item()
+        self.num_activated_experts_log.append(avg_experts_per_batch)
 
     if self.norm_topk_prob:
         # Normalize routing weights for the selected experts
@@ -208,10 +200,11 @@ def apply_pruning(model, experts_to_prune, mode="zero", dynamic_routing_threshol
     for layer_idx, layer in enumerate(model.model.layers):
         moe_block = layer.mlp  
         if hasattr(moe_block, "gate") and hasattr(moe_block, "experts"):
-            moe_block.layer_id = layer_idx  # For debug logging
+            moe_block.layer_id = layer_idx
             print(f"INFO: Patching MoE layer {layer_idx} with mode '{mode}'.")
             moe_block.pruned_experts = experts_to_prune.get(layer_idx, [])
             if mode == "dynamic":
+                moe_block.num_activated_experts_log = []
                 print(f"INFO: Setting dynamic_routing_threshold to {dynamic_routing_threshold} for layer {layer_idx}.")
                 moe_block.dynamic_routing_threshold = dynamic_routing_threshold
             moe_block.forward = patch_fn.__get__(moe_block, moe_block.__class__)

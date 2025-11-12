@@ -61,12 +61,29 @@ def main():
     results = simple_evaluate(**eval_kwargs)
     print(results)
 
+    expert_activation_report = {}
+    if args.pruning_method == "dynamic":
+        total_avg = 0
+        num_layers = 0
+        for i, layer in enumerate(model.model.layers):
+            moe_block = layer.mlp
+            if hasattr(moe_block, "num_activated_experts_log") and moe_block.num_activated_experts_log:
+                avg_experts = sum(moe_block.num_activated_experts_log) / len(moe_block.num_activated_experts_log)
+                expert_activation_report[f"layer_{i}"] = f"{avg_experts:.2f}"
+                total_avg += avg_experts
+                num_layers += 1
+        if num_layers > 0:
+            expert_activation_report["overall_average"] = f"{total_avg / num_layers:.2f}"
+
     if args.output_file:
         output_file = args.output_file
         output_data = {
             "config": vars(args),
             "results": results["results"]
         }
+        if expert_activation_report:
+            output_data["expert_activation_report"] = expert_activation_report
+
         with open(output_file, "w") as f:
             json.dump(output_data, f, indent=4)
         print(f"Results and config saved to {output_file}")
