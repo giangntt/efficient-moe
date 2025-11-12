@@ -124,7 +124,8 @@ def patched_forward_dynamic_routing(self, hidden_states: torch.Tensor) -> torch.
     routing_weights, selected_experts = torch.topk(routing_probs, self.top_k, dim=-1)
 
     # Dynamic routing based on cumulative probability
-    threshold = getattr(self, "dynamic_routing_threshold", 0.8)
+    # The threshold is set on the MoE block during the patching process.
+    threshold = self.dynamic_routing_threshold
     cumulative_weights = torch.cumsum(routing_weights, dim=-1)
     
     # Create a mask to select experts until the cumulative probability exceeds the threshold
