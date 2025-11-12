@@ -18,8 +18,9 @@ def parse_args():
     parser.add_argument('--use_pruned_model', action='store_true', help='Whether to use pruned model')
     parser.add_argument('--pruned_metadata', type=str, default=None, help='Path to pruned expert metadata JSON')
     parser.add_argument('--mode', type=str, choices=['least', 'mode'], default='least', help='Strategy for selecting experts to prune')
-    parser.add_argument('--pruning_method', type=str, choices=['mask', 'zero'], default='zero', help='Method to use for pruning experts')
+    parser.add_argument('--pruning_method', type=str, choices=['mask', 'zero', 'dynamic'], default='zero', help='Method to use for pruning experts')
     parser.add_argument('--k', type=int, default=5, help='Number of experts to prune per layer')
+    parser.add_argument('--dynamic_routing_threshold', type=float, default=0.8, help='Cumulative probability threshold for dynamic routing')
     parser.add_argument('--device', type=str, default='cuda', help='Device for model')
     parser.add_argument('--output_file', type=str, default=None, help='File to save results JSON')
     
@@ -39,7 +40,12 @@ def main():
             top_k=args.k,
             mode=args.mode
         )
-        apply_pruning(model.model, experts_to_prune, mode=args.pruning_method)
+        apply_pruning(
+            model.model, 
+            experts_to_prune, 
+            mode=args.pruning_method, 
+            dynamic_routing_threshold=args.dynamic_routing_threshold
+        )
 
     # Prepare arguments for simple_evaluate
     eval_kwargs = dict(
