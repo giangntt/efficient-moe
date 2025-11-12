@@ -65,7 +65,7 @@ def main():
     if args.pruning_method == "dynamic":
         total_avg = 0
         num_layers = 0
-        for i, layer in enumerate(model.model.layers):
+        for i, layer in enumerate(model.model.model.layers):
             moe_block = layer.mlp
             if hasattr(moe_block, "num_activated_experts_log") and moe_block.num_activated_experts_log:
                 avg_experts = sum(moe_block.num_activated_experts_log) / len(moe_block.num_activated_experts_log)
