@@ -11,12 +11,18 @@
 # This setup allows us to apply the dynamic routing logic to the full, original model.
 
 python evaluation.py \
-    --tasks gsm8k \
+    --tasks mmlu \
     --batch_size 8 \
-    --limit 100 \
+    --limit 1 \
     --use_pruned_model \
     --pruned_metadata "prune_experts/super_experts_ids.json" \
     --mode least \
     --pruning_method dynamic \
     --k 0 \
-    --device cuda
+    --dynamic_routing_threshold 0.2 \
+    --device cuda \
+    --output_file "results_dynamic_mmlu.json"
+
+
+
+
