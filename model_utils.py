@@ -152,7 +152,9 @@ def patched_forward_dynamic_routing(self, hidden_states: torch.Tensor) -> torch.
 
     if self.norm_topk_prob:
         # Normalize routing weights for the selected experts
-        routing_weights /= routing_weights.sum(dim=-1, keepdim=True)
+        # Add a small epsilon for numerical stability to prevent division by zero.
+        routing_weights_sum = routing_weights.sum(dim=-1, keepdim=True)
+        routing_weights = routing_weights / (routing_weights_sum + 1e-6)
 
     routing_weights = routing_weights.to(hidden_states.dtype)
 
