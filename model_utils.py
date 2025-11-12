@@ -194,7 +194,9 @@ def apply_pruning(model, experts_to_prune, mode="zero", dynamic_routing_threshol
     for layer_idx, layer in enumerate(model.model.layers):
         moe_block = layer.mlp  
         if hasattr(moe_block, "gate") and hasattr(moe_block, "experts"):
+            print(f"INFO: Patching MoE layer {layer_idx} with mode '{mode}'.")
             moe_block.pruned_experts = experts_to_prune.get(layer_idx, [])
             if mode == "dynamic":
+                print(f"INFO: Setting dynamic_routing_threshold to {dynamic_routing_threshold} for layer {layer_idx}.")
                 moe_block.dynamic_routing_threshold = dynamic_routing_threshold
             moe_block.forward = patch_fn.__get__(moe_block, moe_block.__class__)
