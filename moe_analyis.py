@@ -216,7 +216,7 @@ def _(alt, loaded_threshold_data, mo, pd):
         # Combine the line chart and error bars
         combined_chart = (chart + error_bars).interactive()
         combined_chart
-    return combined_chart, df_mmlu_acc
+    return chart, combined_chart, df_mmlu_acc
 
 
 @app.cell
@@ -296,33 +296,49 @@ def _(category_charts, mo):
 
 
 @app.cell
-def _(alt, loaded_threshold_data, mo, pd):
+def _(alt, chart, loaded_threshold_data, mo, pd):
     """
     Processes expert activation data and creates a plot showing the
     average number of activated experts versus the dynamic routing threshold.
     """
-    expert_data = []
-    for threshold_str, data in loaded_threshold_data.items():
-        try:
-            threshold = float(threshold_str)
-            report = data.get('expert_activation_report', {})
-            avg_experts = report.get('overall_average')
 
-            if avg_experts is not None:
-                expert_data.append({
-                    'threshold': threshold,
-                    'average_experts': float(avg_experts),
-                })
-        except (ValueError, TypeError) as e:
-            print(f"Could not process expert activation data for threshold '{threshold_str}': {e}")
-            continue
+    def _extract_expert_activation_data(loaded_threshold_data):
+        """
+        Extracts expert activation data from the loaded threshold data.
 
-    chart = None
-    df_expert_activation = None
-    if expert_data:
-        df_expert_activation = pd.DataFrame(expert_data)
+        Args:
+            loaded_threshold_data (dict): A dictionary containing data for various thresholds.
 
-        # Create the chart
+        Returns:
+            list: A list of dictionaries, each containing 'threshold' and 'average_experts'.
+        """
+        expert_data = []
+        for threshold_str, data in loaded_threshold_data.items():
+            try:
+                threshold = float(threshold_str)
+                report = data.get('expert_activation_report', {})
+                avg_experts = report.get('overall_average')
+
+                if avg_experts is not None:
+                    expert_data.append({
+                        'threshold': threshold,
+                        'average_experts': float(avg_experts),
+                    })
+            except (ValueError, TypeError) as e:
+                print(f"Could not process expert activation data for threshold '{threshold_str}': {e}")
+                continue
+        return expert_data
+
+    def _create_expert_activation_chart(df_expert_activation):
+        """
+        Creates an Altair chart showing average activated experts vs. dynamic routing threshold.
+
+        Args:
+            df_expert_activation (pd.DataFrame): DataFrame with 'threshold' and 'average_experts' columns.
+
+        Returns:
+            alt.Chart: An Altair chart object.
+        """
         chart = alt.Chart(df_expert_activation).mark_line(point=True).encode(
             x=alt.X('threshold:Q', title='Dynamic Routing Threshold'),
             y=alt.Y('average_experts:Q', title='Average Activated Experts'),
@@ -333,12 +349,23 @@ def _(alt, loaded_threshold_data, mo, pd):
         ).properties(
             title='Average Activated Experts vs. Dynamic Routing Threshold'
         ).interactive()
+        return chart
 
+    expert_data_list = _extract_expert_activation_data(loaded_threshold_data)
+
+    if expert_data_list:
+        df_expert_activation = pd.DataFrame(expert_data_list)
+        expert_chart = _create_expert_activation_chart(df_expert_activation)
         chart
     else:
-        mo.md("No expert activation data found to plot.")
-    
-    return chart, df_expert_activation
+        mo.md("No expert activation data foundto plot.")
+    expert_chart
+    return
+
+
+@app.cell
+def _():
+    return
 
 
 if __name__ == "__main__":
