@@ -296,8 +296,49 @@ def _(category_charts, mo):
 
 
 @app.cell
-def _():
-    return
+def _(alt, loaded_threshold_data, mo, pd):
+    """
+    Processes expert activation data and creates a plot showing the
+    average number of activated experts versus the dynamic routing threshold.
+    """
+    expert_data = []
+    for threshold_str, data in loaded_threshold_data.items():
+        try:
+            threshold = float(threshold_str)
+            report = data.get('expert_activation_report', {})
+            avg_experts = report.get('overall_average')
+
+            if avg_experts is not None:
+                expert_data.append({
+                    'threshold': threshold,
+                    'average_experts': float(avg_experts),
+                })
+        except (ValueError, TypeError) as e:
+            print(f"Could not process expert activation data for threshold '{threshold_str}': {e}")
+            continue
+
+    chart = None
+    df_expert_activation = None
+    if expert_data:
+        df_expert_activation = pd.DataFrame(expert_data)
+
+        # Create the chart
+        chart = alt.Chart(df_expert_activation).mark_line(point=True).encode(
+            x=alt.X('threshold:Q', title='Dynamic Routing Threshold'),
+            y=alt.Y('average_experts:Q', title='Average Activated Experts'),
+            tooltip=[
+                alt.Tooltip('threshold', title='Threshold'),
+                alt.Tooltip('average_experts', title='Avg. Activated Experts', format='.2f')
+            ]
+        ).properties(
+            title='Average Activated Experts vs. Dynamic Routing Threshold'
+        ).interactive()
+
+        chart
+    else:
+        mo.md("No expert activation data found to plot.")
+    
+    return chart, df_expert_activation
 
 
 if __name__ == "__main__":
