@@ -366,52 +366,63 @@ def _(alt, chart, loaded_threshold_data, mo, pd):
 @app.cell
 def _(alt, loaded_threshold_data, mo, pd):
     """
-    Processes layer-specific expert activation data and creates a plot showing
-    the average number of activated experts per layer, faceted by the dynamic
-    routing threshold.
+    Processes layer-specific expert activation data and creates a plot of
+    average activated experts vs. threshold, with a line for each layer.
     """
-    layer_activation_data = []
 
-    for threshold_str, data in loaded_threshold_data.items():
-        try:
-            threshold = float(threshold_str)
-            report = data.get('expert_activation_report', {})
+    def _extract_layer_activation_data(loaded_threshold_data):
+        """
+        Extracts layer-specific expert activation data from loaded threshold data.
+        """
+        layer_activation_data = []
+        for threshold_str, data in loaded_threshold_data.items():
+            try:
+                threshold = float(threshold_str)
+                report = data.get('expert_activation_report', {})
 
-            for key, value in report.items():
-                if key.startswith('layer_'):
-                    try:
-                        layer_index = int(key.split('_')[1])
-                        activation = float(value)
-                        layer_activation_data.append({
-                            'threshold': threshold,
-                            'layer': layer_index,
-                            'average_experts': activation
-                        })
-                    except (ValueError, IndexError):
-                        print(f"Could not parse layer data for key '{key}' in threshold '{threshold_str}'")
-                        continue
-        except (ValueError, TypeError) as e:
-            print(f"Could not process expert activation data for threshold '{threshold_str}': {e}")
-            continue
+                for key, value in report.items():
+                    if key.startswith('layer_'):
+                        try:
+                            layer_index = int(key.split('_')[1])
+                            activation = float(value)
+                            layer_activation_data.append({
+                                'threshold': threshold,
+                                'layer': layer_index,
+                                'average_experts': activation
+                            })
+                        except (ValueError, IndexError):
+                            print(f"Could not parse layer data for key '{key}' in threshold '{threshold_str}'")
+                            continue
+            except (ValueError, TypeError) as e:
+                print(f"Could not process expert activation data for threshold '{threshold_str}': {e}")
+                continue
+        return layer_activation_data
 
-    df_layer_activation = None
-    layer_chart = None
-    if layer_activation_data:
-        df_layer_activation = pd.DataFrame(layer_activation_data)
-
-        layer_chart = alt.Chart(df_layer_activation).mark_line(point=True).encode(
-            x=alt.X('layer:Q', title='Layer Index', axis=alt.Axis(tickMinStep=1)),
+    def _create_layer_activation_chart(df_layer_activation):
+        """
+        Creates an Altair chart for layer-specific expert activation.
+        """
+        chart = alt.Chart(df_layer_activation).mark_line(point=True).encode(
+            x=alt.X('threshold:Q', title='Dynamic Routing Threshold'),
             y=alt.Y('average_experts:Q', title='Average Activated Experts'),
-            color=alt.Color('threshold:N', title='Routing Threshold'),
+            color=alt.Color('layer:N', title='Layer'),
             tooltip=[
                 alt.Tooltip('threshold', title='Threshold'),
                 alt.Tooltip('layer', title='Layer'),
                 alt.Tooltip('average_experts', title='Avg. Activated Experts', format='.2f')
             ]
         ).properties(
-            title='Average Expert Activation per Layer for Different Thresholds'
+            title='Average Expert Activation vs. Threshold per Layer'
         ).interactive()
+        return chart
 
+    layer_data_list = _extract_layer_activation_data(loaded_threshold_data)
+
+    df_layer_activation = None
+    layer_chart = None
+    if layer_data_list:
+        df_layer_activation = pd.DataFrame(layer_data_list)
+        layer_chart = _create_layer_activation_chart(df_layer_activation)
         layer_chart
     else:
         mo.md("No layer-specific expert activation data found to plot.")
