@@ -11,7 +11,7 @@
 # This setup allows us to apply the dynamic routing logic to the full, original model.
 
 # Define the thresholds to test
-THRESHOLDS="0.05 0.1 0.15 0.2 0.25"
+THRESHOLDS="0.3 0.35 0.4 0.45 0.5"
 
 # Loop over each threshold and run the evaluation
 for threshold in $THRESHOLDS
@@ -24,8 +24,8 @@ do
     # Run the evaluation script
     python evaluation.py \
         --tasks mmlu \
-        --batch_size 8 \
-        --limit 1 \
+        --batch_size 12 \
+        --limit 300 \
         --use_pruned_model \
         --pruned_metadata "prune_experts/super_experts_ids.json" \
         --mode least \
