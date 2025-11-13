@@ -81,7 +81,7 @@ def extract_mmlu_categories(loaded_threshold_data):
         # Add MMLU subcategories
         for cat_key, cat_data in results.items():
             if cat_key.startswith('mmlu_') and 'acc,none' in cat_data:
-                alias = cat_data.get('alias', cat_key).replace(' - ', '')
+                alias = cat_data.get('alias', cat_key).split('-')[-1]
                 unique_mmlu_categories.add(alias.strip())
 
     mmlu_categories_list = sorted(list(unique_mmlu_categories))
@@ -228,7 +228,7 @@ def _(alt, conti, loaded_threshold_data, mo, pd):
                 # Check if it's an MMLU subcategory (starts with 'mmlu_' but is not the overall 'mmlu' key)
                 if cat_key.startswith('mmlu_') and 'acc,none' in cat_data:
                     # Extract alias, removing leading ' - ' if present
-                    alias = cat_data.get('alias', cat_key).replace(' - ', '')
+                    alias = cat_data.get('alias', cat_key).split('-')[-1]
                     plot_data.append({
                         'threshold': threshold,
                         'category': alias.strip(),
