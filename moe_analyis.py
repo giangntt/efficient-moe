@@ -426,8 +426,8 @@ def _(alt, loaded_threshold_data, mo, pd):
         layer_chart
     else:
         mo.md("No layer-specific expert activation data found to plot.")
-
-    return df_layer_activation, layer_chart
+    layer_chart
+    return
 
 
 if __name__ == "__main__":
