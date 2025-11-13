@@ -143,33 +143,39 @@ def _(alt, loaded_threshold_data, mo, pd):
     # Prepare data for plotting
     plot_data = []
     for threshold_str, data in loaded_threshold_data.items():
-
         try:
             threshold = float(threshold_str)
             results = data.get('results', {})
 
             # Overall MMLU
             if 'mmlu' in results:
-                plot_data.append({
-                    'threshold': threshold,
-                    'category': 'MMLU Overall',
-                    'accuracy': float(results['mmlu']['acc,none']),
-                    'stderr': float(results['mmlu']['acc_stderr,none'])
-                })
+                try:
+                    plot_data.append({
+                        'threshold': threshold,
+                        'category': 'MMLU Overall',
+                        'accuracy': float(results['mmlu']['acc,none']),
+                        'stderr': float(results['mmlu']['acc_stderr,none'])
+                    })
+                except (ValueError, KeyError, TypeError) as e:
+                    print(f"Could not process overall MMLU for threshold {threshold}: {e}")
+
 
             # All MMLU subcategories
             for cat_key, cat_data in results.items():
                 # Check if it's an MMLU subcategory (starts with 'mmlu_' but is not the overall 'mmlu' key)
                 if cat_key.startswith('mmlu_') and 'acc,none' in cat_data:
-                    # Extract alias, removing leading ' - ' if present
-                    alias = cat_data.get('alias', cat_key).split('-')[-1]
-                    plot_data.append({
-                        'threshold': threshold,
-                        'category': alias.strip(),
-                        'accuracy': float(cat_data['acc,none']),
-                        'stderr': float(cat_data['acc_stderr,none'])
-                    })
-        except (ValueError, KeyError) as e:
+                    try:
+                        # Extract alias, removing leading ' - ' if present
+                        alias = cat_data.get('alias', cat_key).split('-')[-1]
+                        plot_data.append({
+                            'threshold': threshold,
+                            'category': alias.strip(),
+                            'accuracy': float(cat_data['acc,none']),
+                            'stderr': float(cat_data['acc_stderr,none'])
+                        })
+                    except (ValueError, KeyError, TypeError) as e:
+                        print(f"Could not process {cat_key} for threshold {threshold}: {e}")
+        except (ValueError, TypeError) as e:
             print(f"Skipping data for threshold '{threshold_str}' due to error: {e}")
             continue
 
