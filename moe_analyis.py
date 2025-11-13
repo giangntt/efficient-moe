@@ -139,77 +139,11 @@ def _():
 
 
 @app.cell
-def _(alt, mo, pd):
-    def create_single_mmlu_group_chart(group_name: str, df_mmlu_acc: pd.DataFrame, mmlu_category_groups: dict):
-        """
-        Creates an Altair chart for a specific MMLU category group, showing accuracy
-        across different dynamic routing thresholds for its subcategories.
-
-        Args:
-            group_name (str): The name of the MMLU category group (e.g., "STEM", "Humanities").
-            df_mmlu_acc (pd.DataFrame): DataFrame containing MMLU accuracy data,
-                                        with columns 'threshold', 'category', 'accuracy', 'stderr'.
-            mmlu_category_groups (dict): A dictionary mapping group names to lists of MMLU subcategories.
-
-        Returns:
-            alt.Chart or mo.md: An Altair chart object for the specified group,
-                                or a marimo markdown message if data is not available.
-        """
-        if df_mmlu_acc is None or df_mmlu_acc.empty:
-            return mo.md("No MMLU accuracy data available to create category-specific charts.")
-
-        if group_name not in mmlu_category_groups:
-            return mo.md(f"Error: MMLU category group '{group_name}' not found.")
-
-        subcategories_list = mmlu_category_groups[group_name]
-        filtered_df = df_mmlu_acc[df_mmlu_acc['category'].isin(subcategories_list)]
-
-        if filtered_df.empty:
-            return mo.md(f"No data found for MMLU category group: **{group_name}**.")
-
-        # Create the base chart for the current group
-        base_chart = alt.Chart(filtered_df).encode(
-            x=alt.X('threshold:Q', title='Dynamic Routing Threshold'),
-            y=alt.Y('accuracy:Q', title='Accuracy', scale=alt.Scale(zero=False)),
-            color=alt.Color('category:N', title='MMLU Subcategory'),
-            tooltip=[
-                alt.Tooltip('threshold', title='Threshold'),
-                alt.Tooltip('category', title='Subcategory'),
-                alt.Tooltip('accuracy', title='Accuracy', format='.3f'),
-                alt.Tooltip('stderr', title='Std. Error', format='.3f')
-            ]
-        ).properties(
-            title=f'{group_name} MMLU Accuracy Across Thresholds'
-        )
-
-        # Line chart
-        line_chart = base_chart.mark_line(point=True)
-
-        # Error bars
-        error_bars = base_chart.mark_errorbar(extent='stderr').encode(
-            yError='stderr:Q'
-        )
-
-        # Combine line chart and error bars, make interactive
-        combined_group_chart = (line_chart + error_bars).interactive()
-        return combined_group_chart
-    return (create_single_mmlu_group_chart,)
-
-
-@app.cell
-def _(create_single_mmlu_group_chart, df_mmlu_acc, mmlu_category_groups):
-    humanities_chart = create_single_mmlu_group_chart("Humanities", df_mmlu_acc, mmlu_category_groups)
-    humanities_chart
-    return
-
-
-@app.cell
-def _(alt, conti, loaded_threshold_data, mo, pd):
+def _(alt, loaded_threshold_data, mo, pd):
     # Prepare data for plotting
     plot_data = []
     for threshold_str, data in loaded_threshold_data.items():
-        if threshold_str == "0.2":
-            conti
+
         try:
             threshold = float(threshold_str)
             results = data.get('results', {})
@@ -292,76 +226,8 @@ def _(loaded_threshold_data):
 
 
 @app.cell
-def _():
-    [
-      " abstract_algebra",
-      " anatomy",
-      " astronomy",
-      " business_ethics",
-      " clinical_knowledge",
-      " college_biology",
-      " college_chemistry",
-      " college_computer_science",
-      " college_mathematics",
-      " college_medicine",
-      " college_physics",
-      " computer_security",
-      " conceptual_physics",
-      " econometrics",
-      " electrical_engineering",
-      " elementary_mathematics",
-      " formal_logic",
-      " global_facts",
-      " high_school_biology",
-      " high_school_chemistry",
-      " high_school_computer_science",
-      " high_school_european_history",
-      " high_school_geography",
-      " high_school_government_and_politics",
-      " high_school_macroeconomics",
-      " high_school_mathematics",
-      " high_school_microeconomics",
-      " high_school_physics",
-      " high_school_psychology",
-      " high_school_statistics",
-      " high_school_us_history",
-      " high_school_world_history",
-      " human_aging",
-      " human_sexuality",
-      " international_law",
-      " jurisprudence",
-      " logical_fallacies",
-      " machine_learning",
-      " management",
-      " marketing",
-      " medical_genetics",
-      " miscellaneous",
-      " moral_disputes",
-      " moral_scenarios",
-      " nutrition",
-      " philosophy",
-      " prehistory",
-      " professional_accounting",
-      " professional_law",
-      " professional_medicine",
-      " professional_psychology",
-      " public_relations",
-      " security_studies",
-      " sociology",
-      " us_foreign_policy",
-      " virology",
-      " world_religions",
-      "MMLU Overall",
-      "humanities",
-      "other",
-      "social sciences",
-      "stem"
-    ]
-    return
-
-
-@app.cell
-def _():
+def _(mmlu_category_groups):
+    mmlu_category_groups.keys()
     return
 
 
@@ -414,6 +280,12 @@ def _(alt, mo):
 def _(create_mmlu_category_charts, df_mmlu_acc, mmlu_category_groups):
     category_charts = create_mmlu_category_charts(df_mmlu_acc, mmlu_category_groups)
     category_charts
+    return (category_charts,)
+
+
+@app.cell
+def _(category_charts, mo):
+    mo.vstack(category_charts)
     return
 
 
