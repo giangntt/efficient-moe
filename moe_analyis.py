@@ -231,7 +231,7 @@ def _(alt, conti, loaded_threshold_data, mo, pd):
                     alias = cat_data.get('alias', cat_key).replace(' - ', '')
                     plot_data.append({
                         'threshold': threshold,
-                        'category': alias,
+                        'category': alias.strip(),
                         'accuracy': float(cat_data['acc,none']),
                         'stderr': float(cat_data['acc_stderr,none'])
                     })
