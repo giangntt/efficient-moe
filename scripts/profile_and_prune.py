@@ -104,6 +104,12 @@ def parse_args():
     
     # Model and device
     parser.add_argument(
+        '--model_name',
+        type=str,
+        default="Qwen/Qwen1.5-MoE-A2.7B",
+        help='Model name or path to load'
+    )
+    parser.add_argument(
         '--cuda_visible_devices',
         type=str,
         default=None,
@@ -421,10 +427,10 @@ def main():
     device = args.device if args.device else ("cuda" if torch.cuda.is_available() else "cpu")
     
     # Load model and tokenizer
-    model_name = "Qwen/Qwen1.5-MoE-A2.7B"
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    # model_name = "Qwen/Qwen1.5-MoE-A2.7B"
+    tokenizer = AutoTokenizer.from_pretrained(args.model_name)
     model = AutoModelForCausalLM.from_pretrained(
-        model_name,
+        args.model_name,
         torch_dtype=torch.bfloat16,
         low_cpu_mem_usage=True,
         device_map=None

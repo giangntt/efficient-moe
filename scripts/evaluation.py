@@ -18,6 +18,7 @@ from utils.common_utils import get_experts_to_prune_from_json
 # -------------------
 def parse_args():
     parser = argparse.ArgumentParser(description="Qwen MoE Evaluation Script")
+    parser.add_argument('--model_name', type=str, default="Qwen/Qwen1.5-MoE-A2.7B", help='Model name or path to load')
     parser.add_argument('--tasks', type=str, nargs='+', default=['mmlu'], help='List of evaluation tasks')
     parser.add_argument('--batch_size', type=int, default=8, help='Batch size for evaluation')
     parser.add_argument('--limit', type=int, default=None, help='Limit number of examples for quick testing')
@@ -35,8 +36,8 @@ def parse_args():
 # -------------------
 def main():
     args = parse_args()
-    model_name = "Qwen/Qwen1.5-MoE-A2.7B"  # Default model
-    model = HFLM(model_name, device=args.device, dtype="bfloat16")
+    # model_name = "Qwen/Qwen1.5-MoE-A2.7B"  # Default model
+    model = HFLM(args.model_name, device=args.device, dtype="bfloat16")
 
     if args.use_pruned_model and args.pruned_metadata:
         experts_to_prune = get_experts_to_prune_from_json(
