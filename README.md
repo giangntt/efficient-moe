@@ -59,7 +59,7 @@ pip install transformers datasets lm-eval matplotlib seaborn tqdm numpy
 Evaluate the model on standard benchmarks:
 
 ```bash
-python scripts/evaluation.py --tasks mmlu --batch_size 8 --limit 100 --device cuda
+python scripts/evaluation.py --tasks mmlu --batch_size 8 --limit 100 --device cuda --model_name Qwen/Qwen1.5-MoE-A2.7B
 ```
 
 ### 2. Profile Model and Determine Experts to Prune
@@ -68,8 +68,9 @@ Profile the model on MMLU prompts and generate expert pruning metadata:
 
 ```bash
 python scripts/profile_and_prune.py \
+    --model_name Qwen/Qwen1.5-MoE-A2.7B \ 
     --mmlu_topic stem \
-    --max_samples_per_subject 5 \
+    --sample_size 5 \
     --output_file outputs/statistics/expert_stats.json \
     --device cuda
 ```
@@ -80,11 +81,12 @@ Evaluate a pruned model using pre-computed expert rankings:
 
 ```bash
 python scripts/evaluation.py \
+    --model_name Qwen/Qwen1.5-MoE-A2.7B \ 
     --tasks mmlu \
     --batch_size 8 \
     --limit 100 \
     --use_pruned_model \
-    --pruned_metadata outputs/statistics/experts_to_prune_mean_var_act_dynamic_max30.json \
+    --pruned_metadata outputs/statistics/expert_stats.json \
     --pruning_method zero \
     --k 20 \
     --device cuda \
@@ -96,7 +98,7 @@ python scripts/evaluation.py \
 Run correlation analysis across MMLU categories:
 
 ```bash
-python run_mmlu_categories_correlation.py --device cuda
+python run_mmlu_categories_correlation.py
 ```
 
 ### 5. Using the Shell Script
@@ -150,6 +152,7 @@ python scripts/evaluation.py [OPTIONS]
 ```
 
 **Key Options:**
+- `--model_name`: Name or path of the model to profile & prune (default: `Qwen/Qwen1.5-MoE-A2.7B`)
 - `--tasks`: List of evaluation tasks (e.g., `mmlu`, `gsm8k`, `wikitext`)
 - `--batch_size`: Batch size for evaluation (default: 8)
 - `--limit`: Limit number of examples for quick testing
@@ -163,6 +166,7 @@ python scripts/evaluation.py [OPTIONS]
 **Example:**
 ```bash
 python scripts/evaluation.py \
+    --model_name Qwen/Qwen1.5-MoE-A2.7B \ 
     --tasks mmlu gsm8k \
     --batch_size 16 \
     --use_pruned_model \
@@ -182,18 +186,20 @@ python scripts/profile_and_prune.py [OPTIONS]
 ```
 
 **Key Options:**
+- `--model_name`: Name or path of the model to profile & prune (default: `Qwen/Qwen1.5-MoE-A2.7B`)
 - `--prompts_file`: Path to JSON file with prompt strings
 - `--mmlu_topic`: MMLU topic category (`humanities`, `stem`, `social_sciences`, `other`)
 - `--gsm8k`: Use GSM8K dataset for prompts
-- `--max_samples_per_subject`: Maximum samples per MMLU subject (default: 5)
+- `--sample_size`: Maximum samples per MMLU subject (default: 5)
 - `--output_file`: Output file path for expert statistics
 - `--device`: Device for model (default: `cuda`)
 
 **Example:**
 ```bash
 python scripts/profile_and_prune.py \
+    --model_name Qwen/Qwen1.5-MoE-A2.7B \ 
     --mmlu_topic stem \
-    --max_samples_per_subject 10 \
+    --sample_size 10 \
     --output_file outputs/statistics/stem_experts.json \
     --device cuda
 ```
@@ -204,12 +210,8 @@ Analyzes correlations between router activations and expert usage across MMLU ca
 
 **Usage:**
 ```bash
-python run_mmlu_categories_correlation.py [OPTIONS]
+python run_mmlu_categories_correlation.py
 ```
-
-**Key Options:**
-- `--device`: Device for model (default: `cuda`)
-- `--max_samples_per_subject`: Maximum samples per MMLU subject (default: 5)
 
 **Output:**
 - Generates correlation plots in `outputs/plots/`:
@@ -270,7 +272,7 @@ python run_mmlu_categories_correlation.py [OPTIONS]
 # Step 1: Profile the model
 python scripts/profile_and_prune.py \
     --mmlu_topic stem \
-    --max_samples_per_subject 10 \
+    --sample_size 10 \
     --output_file outputs/statistics/stem_profile.json
 
 # Step 2: Evaluate pruned model
@@ -417,14 +419,4 @@ python scripts/evaluation.py --tasks mmlu
 python scripts/evaluation.py --tasks mmlu gsm8k hellaswag arc
 ```
 
-## 🤝 Contributing
-
-This is a research project. For questions or contributions, please refer to the project maintainers.
-
-## 📄 License
-
-Please refer to the license file in the repository for licensing information.
-
----
-
-**Note**: This project is designed for research purposes. Ensure you have appropriate computational resources (GPU recommended) for running evaluations and analyses on MoE models.
+**Note**: This project is designed for research purposes. Ensure you have appropriate computational resources (GPU) for running evaluations and analyses on MoE models.
