@@ -4,9 +4,10 @@ Utilities for collecting and analyzing router logits.
 import torch
 from typing import Dict, List, Optional
 from tqdm import tqdm
+from utils.device_utils import get_input_device
 
 
-def collect_router_logits(model, tokenizer, prompts, device, output_final_logits=False):
+def collect_router_logits(model, tokenizer, prompts, device=None, output_final_logits=False):
     """
     Collect router logits from model inference on prompts.
     
@@ -14,7 +15,7 @@ def collect_router_logits(model, tokenizer, prompts, device, output_final_logits
         model: The model to run inference on
         tokenizer: Tokenizer for the model
         prompts: List of prompt strings
-        device: Device to run inference on
+        device: Device to run inference on (auto-detected from model if None)
         output_final_logits: Whether to also collect final output logits
     
     Returns:
@@ -23,6 +24,8 @@ def collect_router_logits(model, tokenizer, prompts, device, output_final_logits
             'final_logits': list of tensors (if output_final_logits=True)
         }
     """
+    if device is None:
+        device = get_input_device(model)
     router_logits = {}
     final_logits = [] if output_final_logits else None
     
@@ -68,10 +71,11 @@ def collect_router_logits_from_loader(model, loader, output_final_logits=False):
     router_logits = {}
     final_logits = [] if output_final_logits else None
     
+    device = get_input_device(model)
     with torch.no_grad():
         for batch_idx, batch in enumerate(tqdm(loader, desc="Collecting router logits")):
-            input_ids = batch["input_ids"].to(model.device)
-            attention_mask = batch["attention_mask"].to(model.device)
+            input_ids = batch["input_ids"].to(device)
+            attention_mask = batch["attention_mask"].to(device)
             
             outputs = model(input_ids=input_ids, attention_mask=attention_mask, output_router_logits=True)
             

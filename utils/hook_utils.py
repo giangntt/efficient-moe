@@ -22,7 +22,9 @@ class ExpertActivationHook:
     
     def register_hooks(self, model):
         """Register forward hooks on all expert down_proj layers."""
-        for layer_idx, layer in enumerate(model.model.layers):
+        # Handle both model.model.layers (wrapped) and model.layers (unwrapped)
+        actual_model = model.model if hasattr(model, 'model') else model
+        for layer_idx, layer in enumerate(actual_model.layers):
             moe_block = layer.mlp
             moe_block.layer_id = layer_idx
 

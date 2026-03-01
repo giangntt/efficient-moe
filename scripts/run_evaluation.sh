@@ -13,9 +13,11 @@ BATCH_SIZE=8
 # Set LIMIT to a number to limit examples, or leave empty/unset for no limit
 LIMIT=30
 # LIMIT=""  # Uncomment this line and comment the line above to run without limit
-DEVICE="cuda"
 BASE_OUTPUT_DIR="outputs/evaluation_results"
 PRUNED_METADATA_DIR="outputs/statistics"
+
+# To control which GPUs are used, set CUDA_VISIBLE_DEVICES before running:
+#   CUDA_VISIBLE_DEVICES=0,1 bash scripts/run_evaluation.sh
 
 # Set to "true" to evaluate full model, "false" to skip
 EVALUATE_FULL_MODEL="false"
@@ -30,13 +32,14 @@ fi
 mkdir -p "$BASE_OUTPUT_DIR"
 
 # 1. Evaluate full model (if enabled)
+# Uses vLLM backend for maximum speed (no pruning needed)
 if [ "$EVALUATE_FULL_MODEL" = "true" ]; then
-    echo "1. Evaluating FULL MODEL..."
+    echo "1. Evaluating FULL MODEL (vLLM backend)..."
     python3 scripts/evaluation.py \
+        --backend vllm \
         --tasks $TASKS \
         --batch_size $BATCH_SIZE \
         $LIMIT_ARG \
-        --device $DEVICE \
         --output_file "$BASE_OUTPUT_DIR/full_model.json"
     
     echo "Full model evaluation completed."
@@ -47,7 +50,8 @@ else
 fi
 
 # 2. Evaluate pruned models with different criteria
-echo "2. Evaluating PRUNED MODELS..."
+# Uses HF backend (required for pruning support)
+echo "2. Evaluating PRUNED MODELS (HF backend)..."
 
 # Define pruning configurations
 # Format: "metadata_file:pruning_method:k:output_suffix"
@@ -65,6 +69,7 @@ for config in "${PRUNING_CONFIGS[@]}"; do
     echo "  - K: $k"
     
     python3 scripts/evaluation.py \
+        --backend hf \
         --tasks $TASKS \
         --batch_size $BATCH_SIZE \
         $LIMIT_ARG \
@@ -72,7 +77,6 @@ for config in "${PRUNING_CONFIGS[@]}"; do
         --pruned_metadata "$PRUNED_METADATA_DIR/$metadata_file" \
         --pruning_method $pruning_method \
         --k $k \
-        --device $DEVICE \
         --output_file "$BASE_OUTPUT_DIR/${output_suffix}_results.json"
     
     echo "  Completed: $output_suffix"
@@ -83,4 +87,3 @@ echo "=========================================="
 echo "All evaluations completed!"
 echo "Results saved in: $BASE_OUTPUT_DIR"
 echo "=========================================="
-

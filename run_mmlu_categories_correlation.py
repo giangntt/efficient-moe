@@ -20,7 +20,7 @@ from utils.router_utils import collect_router_logits
 from utils.analysis_utils import compute_all_stats, compute_correlations_by_layer
 
 
-def process_category(model, tokenizer, category_name, device, max_samples_per_subject=5):
+def process_category(model, tokenizer, category_name, max_samples_per_subject=5):
     """Process one MMLU category: load samples, run forward passes, compute stats."""
     print(f"\n{'='*60}")
     print(f"Processing category: {category_name}")
@@ -34,8 +34,8 @@ def process_category(model, tokenizer, category_name, device, max_samples_per_su
     hook_manager = ExpertActivationHook()
     hook_manager.register_hooks(model)
     
-    # Collect router logits and final logits
-    result = collect_router_logits(model, tokenizer, prompts, device, output_final_logits=True)
+    # Collect router logits and final logits (device auto-detected from model)
+    result = collect_router_logits(model, tokenizer, prompts, output_final_logits=True)
     router_logits = result['router_logits']
     
     # Get expert activations and clear hooks
@@ -104,26 +104,24 @@ def plot_correlations(all_correlations, method='spearman', output_dir=None):
 
 
 def main():
-    # Configuration
-    cuda_visible_devices = "1"
-    
     # Load model
     print("\nLoading model...")
-    if cuda_visible_devices is not None:
-        os.environ["CUDA_VISIBLE_DEVICES"] = str(cuda_visible_devices)
-    
-    device = "cuda" if torch.cuda.is_available() else "cpu"
     model_name = "Qwen/Qwen1.5-MoE-A2.7B"
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
         torch_dtype=torch.bfloat16,
         low_cpu_mem_usage=True,
-        device_map=None
+        device_map="auto"
     )
-    model = model.to(device)
     model.eval()
-    print("Model loaded successfully!")
+
+    # Log device placement
+    if hasattr(model, 'hf_device_map'):
+        devices_used = sorted(set(str(d) for d in model.hf_device_map.values()))
+        print(f"Model loaded across devices: {', '.join(devices_used)}")
+    else:
+        print("Model loaded (single device)")
     
     # Process each category
     all_stats = {}
@@ -132,7 +130,6 @@ def main():
             model=model,
             tokenizer=tokenizer,
             category_name=category_name,
-            device=device,
             max_samples_per_subject=5
         )
         all_stats[category_name] = stats

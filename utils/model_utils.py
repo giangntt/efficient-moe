@@ -1,5 +1,6 @@
 import torch
 import torch.nn.functional as F
+from utils.device_utils import get_input_device, get_layer_device
 
 # -------------------
 # Patched forward & pruning
@@ -123,15 +124,15 @@ def apply_pruning(model, experts_to_prune, mode="zero"):
 
     # Get the actual model (handle both model and model.model cases)
     actual_model = model.model if hasattr(model, 'model') else model
-    # Get device from model parameters
-    device = next(actual_model.parameters()).device
     
     for layer_idx, layer in enumerate(actual_model.layers):
         moe_block = layer.mlp  
         if hasattr(moe_block, "gate") and hasattr(moe_block, "experts"):
             pruned_experts = experts_to_prune.get(layer_idx, [])
+            # Get the device for THIS layer (may differ across GPUs with device_map="auto")
+            layer_device = get_layer_device(moe_block)
             # Pre-create tensor once during pruning setup to avoid recreating it every forward pass
-            pruned_experts_tensor = torch.tensor(list(pruned_experts), device=device, dtype=torch.long) if pruned_experts else torch.tensor([], device=device, dtype=torch.long)
+            pruned_experts_tensor = torch.tensor(list(pruned_experts), device=layer_device, dtype=torch.long) if pruned_experts else torch.tensor([], device=layer_device, dtype=torch.long)
             moe_block.pruned_experts_tensor = pruned_experts_tensor
             moe_block.forward = patch_fn.__get__(moe_block, moe_block.__class__)
 
@@ -157,8 +158,9 @@ def evaluate_model(model, val_loader):
 
     with torch.no_grad():
         for batch in tqdm(val_loader, desc="Evaluating"):
-            input_ids = batch["input_ids"].to(model.device)
-            attention_mask = batch["attention_mask"].to(model.device)
+            device = get_input_device(model)
+            input_ids = batch["input_ids"].to(device)
+            attention_mask = batch["attention_mask"].to(device)
 
             # Ignore padding tokens in loss
             labels = input_ids.masked_fill(attention_mask == 0, -100)

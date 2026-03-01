@@ -177,7 +177,7 @@ def load_prompts(args):
         )
 
 
-def profile_model(model, tokenizer, prompts, device):
+def profile_model(model, tokenizer, prompts):
     """Profile model by collecting router logits and expert activations."""
     print("\n" + "="*60)
     print("Profiling model...")
@@ -187,8 +187,8 @@ def profile_model(model, tokenizer, prompts, device):
     hook_manager = ExpertActivationHook()
     hook_manager.register_hooks(model)
     
-    # Collect router logits and final logits
-    result = collect_router_logits(model, tokenizer, prompts, device, output_final_logits=False)
+    # Collect router logits and final logits (device auto-detected from model)
+    result = collect_router_logits(model, tokenizer, prompts, output_final_logits=False)
     router_logits = result['router_logits']
     
     # Get expert activations and clear hooks
@@ -423,9 +423,6 @@ def main():
     if args.cuda_visible_devices is not None:
         os.environ["CUDA_VISIBLE_DEVICES"] = str(args.cuda_visible_devices)
     
-    # Determine device
-    device = args.device if args.device else ("cuda" if torch.cuda.is_available() else "cpu")
-    
     # Load model and tokenizer
     # model_name = "Qwen/Qwen1.5-MoE-A2.7B"
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
@@ -433,18 +430,22 @@ def main():
         args.model_name,
         torch_dtype=torch.bfloat16,
         low_cpu_mem_usage=True,
-        device_map=None
+        device_map="auto"
     )
-    model = model.to(device)
     model.eval()
     
-    print(f"Model loaded on device: {device}")
+    # Log device placement
+    if hasattr(model, 'hf_device_map'):
+        devices_used = sorted(set(str(d) for d in model.hf_device_map.values()))
+        print(f"Model loaded across devices: {', '.join(devices_used)}")
+    else:
+        print("Model loaded (single device)")
     
     # Load prompts
     prompts = load_prompts(args)
     
     # Profile model
-    router_logits, expert_activations = profile_model(model, tokenizer, prompts, device)
+    router_logits, expert_activations = profile_model(model, tokenizer, prompts)
     
     # Compute statistics
     stats = compute_statistics(router_logits, expert_activations, top_k=4)
