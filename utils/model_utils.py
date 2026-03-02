@@ -137,6 +137,70 @@ def apply_pruning(model, experts_to_prune, mode="zero"):
             moe_block.forward = patch_fn.__get__(moe_block, moe_block.__class__)
 
 
+def prune_weights_inplace(model, experts_to_prune, mode="zero"):
+    """
+    Permanently prune experts by mutating model weights in-place.
+
+    Unlike apply_pruning() (which monkey-patches forward at runtime), this
+    function directly modifies the weight tensors so the result can be saved
+    with model.save_pretrained() and loaded by any inference engine (vLLM, etc.).
+
+    Two modes (matching the runtime apply_pruning modes):
+
+      "zero"  — zeros all weight tensors in each pruned expert's MLP
+                (gate_proj, up_proj, down_proj). The router may still route
+                tokens to those experts, but their output will be all zeros.
+
+      "mask"  — additionally sets a large negative bias (-1e9) on the gate
+                linear layer's columns for pruned experts, so softmax assigns
+                them ~0 probability and tokens are never routed to them.
+                Since the gate has no bias by default, a zero bias is added
+                first. Expert weights are also zeroed (belt-and-suspenders).
+
+    Args:
+        model: A Hugging Face AutoModelForCausalLM (or its inner .model).
+        experts_to_prune: dict mapping layer_idx (int) -> list of expert indices.
+        mode: "zero" or "mask".
+    """
+    if mode not in ("zero", "mask"):
+        raise ValueError(f"Unknown mode '{mode}'. Use 'zero' or 'mask'.")
+
+    actual_model = model.model if hasattr(model, "model") else model
+    total_zeroed = 0
+    layers_affected = 0
+
+    for layer_idx, layer in enumerate(actual_model.layers):
+        moe_block = layer.mlp
+        if not (hasattr(moe_block, "gate") and hasattr(moe_block, "experts")):
+            continue
+
+        to_prune = experts_to_prune.get(layer_idx, [])
+        if not to_prune:
+            continue
+
+        layers_affected += 1
+
+        # Both modes: zero out the expert MLP weights
+        for expert_idx in to_prune:
+            for param in moe_block.experts[expert_idx].parameters():
+                param.data.zero_()
+            total_zeroed += 1
+
+        # mask mode: bias the gate so pruned experts get ~0 routing probability
+        if mode == "mask":
+            gate = moe_block.gate  # nn.Linear(hidden_size, num_experts, bias=False)
+            if gate.bias is None:
+                gate.bias = torch.nn.Parameter(
+                    torch.zeros(gate.out_features,
+                                device=gate.weight.device,
+                                dtype=gate.weight.dtype)
+                )
+            gate.bias.data[list(to_prune)] = -1e9
+
+    print(f"[prune_weights_inplace] mode={mode} | "
+          f"layers affected: {layers_affected} | experts zeroed: {total_zeroed}")
+
+
 def evaluate_model(model, val_loader):
     """
     Evaluate the model on the validation dataset.

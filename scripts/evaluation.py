@@ -15,7 +15,8 @@ from lm_eval import simple_evaluate
 # -------------------
 def parse_args():
     parser = argparse.ArgumentParser(description="Qwen MoE Evaluation Script")
-    parser.add_argument('--model_name', type=str, default="Qwen/Qwen1.5-MoE-A2.7B", help='Model name or path to load')
+    parser.add_argument('--model_name', type=str, default="Qwen/Qwen1.5-MoE-A2.7B",
+                        help='Model name or local path to load (can be a pruned model directory)')
     parser.add_argument('--tasks', type=str, nargs='+', default=['mmlu'], help='List of evaluation tasks')
     parser.add_argument('--batch_size', type=int, default=8, help='Batch size for evaluation')
     parser.add_argument('--limit', type=int, default=None, help='Limit number of examples for quick testing')
@@ -23,14 +24,7 @@ def parse_args():
 
     # Backend selection
     parser.add_argument('--backend', type=str, choices=['hf', 'vllm'], default='vllm',
-                        help='Inference backend: "vllm" (fast, no pruning) or "hf" (slower, supports pruning)')
-
-    # Pruning options (HF backend only)
-    parser.add_argument('--use_pruned_model', action='store_true', help='Whether to use pruned model (HF backend only)')
-    parser.add_argument('--pruned_metadata', type=str, default=None, help='Path to pruned expert metadata JSON')
-    parser.add_argument('--k', type=int, default=20, help='Maximum number of experts to prune per layer')
-    parser.add_argument('--pruning_method', type=str, choices=['mask', 'zero'], default='zero',
-                        help='Method to use for pruning experts')
+                        help='Inference backend: "vllm" (fast, default) or "hf" (slower)')
 
     # vLLM options
     parser.add_argument('--tensor_parallel_size', type=int, default=None,
@@ -44,23 +38,12 @@ def parse_args():
 def create_hf_model(args):
     """Create an HF model with multi-GPU support via Accelerate pipeline parallelism."""
     from lm_eval.models.huggingface import HFLM
-    from utils.model_utils import apply_pruning
-    from utils.common_utils import get_experts_to_prune_from_json
 
     model = HFLM(
         args.model_name,
         parallelize=True,
         dtype="bfloat16",
     )
-
-    if args.use_pruned_model and args.pruned_metadata:
-        experts_to_prune = get_experts_to_prune_from_json(
-            path=args.pruned_metadata,
-            k=args.k
-        )
-        apply_pruning(model.model, experts_to_prune, mode=args.pruning_method)
-        print(f"Applied {args.pruning_method} pruning with k={args.k}")
-
     return model
 
 
@@ -90,12 +73,8 @@ def create_vllm_model(args):
 def main():
     args = parse_args()
 
-    # Validate: pruning requires HF backend
-    if args.use_pruned_model and args.backend == 'vllm':
-        print("WARNING: Pruning is not supported with vLLM backend. Switching to HF backend.")
-        args.backend = 'hf'
-
     print(f"Using backend: {args.backend}")
+    print(f"Model: {args.model_name}")
 
     if args.backend == 'vllm':
         model = create_vllm_model(args)
