@@ -52,10 +52,10 @@ def patched_forward_masked_experts(self, hidden_states: torch.Tensor) -> torch.T
         # the `top_x` tensor here.
         final_hidden_states.index_add_(0, top_x, current_hidden_states.to(hidden_states.dtype))
 
-    shared_expert_output = self.shared_expert(hidden_states)
-    shared_expert_output = F.sigmoid(self.shared_expert_gate(hidden_states)) * shared_expert_output
-
-    final_hidden_states = final_hidden_states + shared_expert_output
+    if hasattr(self, 'shared_expert') and self.shared_expert is not None:
+        shared_expert_output = self.shared_expert(hidden_states)
+        shared_expert_output = F.sigmoid(self.shared_expert_gate(hidden_states)) * shared_expert_output
+        final_hidden_states = final_hidden_states + shared_expert_output
 
     final_hidden_states = final_hidden_states.reshape(batch_size, sequence_length, hidden_dim)
     return final_hidden_states, router_logits
@@ -99,10 +99,10 @@ def patched_forward_zeroed_experts(self, hidden_states: torch.Tensor) -> torch.T
         current_hidden_states = expert_layer(current_state) * routing_weights[top_x, idx, None]
         final_hidden_states.index_add_(0, top_x, current_hidden_states.to(hidden_states.dtype))
 
-    shared_expert_output = self.shared_expert(hidden_states)
-    shared_expert_output = F.sigmoid(self.shared_expert_gate(hidden_states)) * shared_expert_output
-
-    final_hidden_states = final_hidden_states + shared_expert_output
+    if hasattr(self, 'shared_expert') and self.shared_expert is not None:
+        shared_expert_output = self.shared_expert(hidden_states)
+        shared_expert_output = F.sigmoid(self.shared_expert_gate(hidden_states)) * shared_expert_output
+        final_hidden_states = final_hidden_states + shared_expert_output
     final_hidden_states = final_hidden_states.reshape(batch_size, sequence_length, hidden_dim)
     return final_hidden_states, router_logits
 
