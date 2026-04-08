@@ -113,13 +113,45 @@ def parse_args():
         '--cuda_visible_devices',
         type=str,
         default=None,
-        help='CUDA visible devices (e.g., "0" or "1")'
+        help='CUDA visible devices (e.g., "0,1")'
     )
     parser.add_argument(
         '--device',
         type=str,
         default="cuda",
-        help='Device to use (overrides cuda_visible_devices)'
+        help='Device to use (overrides cuda_visible_devices); ignored when using device_map=auto'
+    )
+
+    # Generation parameters
+    parser.add_argument(
+        '--max_new_tokens',
+        type=int,
+        default=10000,
+        help='Maximum new tokens to generate per prompt during profiling'
+    )
+    parser.add_argument(
+        '--temperature',
+        type=float,
+        default=1.0,
+        help='Sampling temperature (set to None/omit for greedy)'
+    )
+    parser.add_argument(
+        '--top_p',
+        type=float,
+        default=0.95,
+        help='Nucleus sampling top-p'
+    )
+    parser.add_argument(
+        '--top_k',
+        type=int,
+        default=20,
+        help='Top-k sampling'
+    )
+    parser.add_argument(
+        '--enable_thinking',
+        action='store_true',
+        default=False,
+        help='Enable Qwen3 thinking mode (default: disabled)'
     )
     
     # Output
@@ -177,18 +209,26 @@ def load_prompts(args):
         )
 
 
-def profile_model(model, tokenizer, prompts, device):
+def profile_model(model, tokenizer, prompts, device, args):
     """Profile model by collecting router logits and expert activations."""
     print("\n" + "="*60)
     print("Profiling model...")
     print("="*60)
-    
+
     # Register hooks and collect data
     hook_manager = ExpertActivationHook()
     hook_manager.register_hooks(model)
-    
-    # Collect router logits and final logits
-    result = collect_router_logits(model, tokenizer, prompts, device, output_final_logits=False)
+
+    # Collect router logits via generation
+    result = collect_router_logits(
+        model, tokenizer, prompts, device,
+        output_final_logits=False,
+        max_new_tokens=args.max_new_tokens,
+        temperature=args.temperature,
+        top_p=args.top_p,
+        top_k=args.top_k,
+        enable_thinking=args.enable_thinking,
+    )
     router_logits = result['router_logits']
     
     # Get expert activations and clear hooks
@@ -427,24 +467,24 @@ def main():
     device = args.device if args.device else ("cuda" if torch.cuda.is_available() else "cpu")
     
     # Load model and tokenizer
-    # model_name = "Qwen/Qwen1.5-MoE-A2.7B"
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
     model = AutoModelForCausalLM.from_pretrained(
         args.model_name,
-        torch_dtype=torch.bfloat16,
+        dtype=torch.bfloat16,
         low_cpu_mem_usage=True,
-        device_map=None
+        device_map="auto",   # distributes layers across all visible GPUs
     )
-    model = model.to(device)
     model.eval()
-    
-    print(f"Model loaded on device: {device}")
+
+    # Input tensors go to the device that hosts the embedding layer
+    device = next(model.parameters()).device
+    print(f"Model loaded with device_map=auto; input device: {device}")
     
     # Load prompts
     prompts = load_prompts(args)
     
     # Profile model
-    router_logits, expert_activations = profile_model(model, tokenizer, prompts, device)
+    router_logits, expert_activations = profile_model(model, tokenizer, prompts, device, args)
     
     # Compute statistics
     stats = compute_statistics(router_logits, expert_activations, top_k=4)
