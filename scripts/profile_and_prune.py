@@ -153,6 +153,12 @@ def parse_args():
         default=False,
         help='Enable Qwen3 thinking mode (default: disabled)'
     )
+    parser.add_argument(
+        '--prefill_only',
+        action='store_true',
+        default=False,
+        help='Profile only the prompt forward pass without generating new tokens'
+    )
     
     # Output
     parser.add_argument(
@@ -228,6 +234,7 @@ def profile_model(model, tokenizer, prompts, device, args):
         top_p=args.top_p,
         top_k=args.top_k,
         enable_thinking=args.enable_thinking,
+        prefill_only=args.prefill_only,
     )
     router_logits = result['router_logits']
     

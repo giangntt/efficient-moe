@@ -17,6 +17,7 @@ def collect_router_logits(
     top_p: Optional[float] = None,
     top_k: Optional[int] = None,
     enable_thinking: bool = False,
+    prefill_only: bool = False,
 ):
     """
     Collect router logits from model generation on prompts.
@@ -36,6 +37,7 @@ def collect_router_logits(
         top_p: Nucleus sampling probability
         top_k: Top-k sampling
         enable_thinking: Qwen3 chat-template flag (False disables thinking mode)
+        prefill_only: If True, run a single forward pass on the prompt only (no generation)
 
     Returns:
         dict: {
@@ -87,7 +89,10 @@ def collect_router_logits(
                 )
 
             inputs = {k: v.to(device) for k, v in inputs.items()}
-            model.generate(**inputs, **gen_kwargs)
+            if prefill_only:
+                model(**inputs)
+            else:
+                model.generate(**inputs, **gen_kwargs)
 
     router_logits = router_hook.get_router_logits()
     router_hook.clear_hooks()
