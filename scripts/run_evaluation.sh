@@ -32,13 +32,14 @@ mkdir -p "$BASE_OUTPUT_DIR"
 # 1. Evaluate full model (if enabled)
 if [ "$EVALUATE_FULL_MODEL" = "true" ]; then
     echo "1. Evaluating FULL MODEL..."
+    SECONDS=0
     python3 scripts/evaluation.py \
         --tasks $TASKS \
         --batch_size $BATCH_SIZE \
         $LIMIT_ARG \
         --device $DEVICE \
         --output_file "$BASE_OUTPUT_DIR/full_model.json"
-    
+    echo "  Wall time: ${SECONDS}s"
     echo "Full model evaluation completed."
     echo "=========================================="
 else
@@ -58,12 +59,13 @@ declare -a PRUNING_CONFIGS=(
 # Run evaluations for each pruning configuration
 for config in "${PRUNING_CONFIGS[@]}"; do
     IFS=':' read -r metadata_file pruning_method k output_suffix <<< "$config"
-    
+
     echo "Evaluating: $output_suffix"
     echo "  - Metadata: $metadata_file"
     echo "  - Pruning method: $pruning_method"
     echo "  - K: $k"
-    
+
+    SECONDS=0
     python3 scripts/evaluation.py \
         --tasks $TASKS \
         --batch_size $BATCH_SIZE \
@@ -74,7 +76,8 @@ for config in "${PRUNING_CONFIGS[@]}"; do
         --k $k \
         --device $DEVICE \
         --output_file "$BASE_OUTPUT_DIR/${output_suffix}_results.json"
-    
+    echo "  Wall time: ${SECONDS}s"
+
     echo "  Completed: $output_suffix"
     echo "  ----------------------------------------"
 done
@@ -82,5 +85,15 @@ done
 echo "=========================================="
 echo "All evaluations completed!"
 echo "Results saved in: $BASE_OUTPUT_DIR"
+
+# Print latency summary from output JSONs
+echo ""
+echo "Latency summary:"
+for json_file in "$BASE_OUTPUT_DIR"/*.json; do
+    label=$(basename "$json_file" .json)
+    eval_s=$(python3 -c "import json; d=json.load(open('$json_file')); print(d.get('latency',{}).get('eval_s','N/A'))" 2>/dev/null)
+    ms_per=$(python3 -c "import json; d=json.load(open('$json_file')); print(d.get('latency',{}).get('ms_per_question','N/A'))" 2>/dev/null)
+    echo "  $label: eval=${eval_s}s  ms/question=${ms_per}"
+done
 echo "=========================================="
 

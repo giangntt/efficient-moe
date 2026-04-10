@@ -1,6 +1,7 @@
 import argparse
 import json
 import sys
+import time
 from pathlib import Path
 
 # Add parent directory to path for imports
@@ -36,7 +37,6 @@ def parse_args():
 # -------------------
 def main():
     args = parse_args()
-    # model_name = "Qwen/Qwen1.5-MoE-A2.7B"  # Default model
     model = HFLM(args.model_name, device=args.device, dtype="bfloat16")
 
     if args.use_pruned_model and args.pruned_metadata:
@@ -57,18 +57,29 @@ def main():
     if args.limit:
         eval_kwargs['limit'] = args.limit
 
+    t0 = time.perf_counter()
     results = simple_evaluate(**eval_kwargs)
+    eval_s = time.perf_counter() - t0
+
+    n_samples = args.limit if args.limit else None
+    ms_per_sample = eval_s / n_samples * 1000 if n_samples else None
+
+    print(f"[latency] eval: {eval_s:.2f}s"
+          + (f"  ({ms_per_sample:.1f} ms/question)" if ms_per_sample else ""))
     print(results)
 
     if args.output_file:
-        output_file = args.output_file
         output_data = {
             "config": vars(args),
+            "latency": {
+                "eval_s": eval_s,
+                **({"ms_per_question": ms_per_sample} if ms_per_sample else {}),
+            },
             "results": results["results"]
         }
-        with open(output_file, "w") as f:
+        with open(args.output_file, "w") as f:
             json.dump(output_data, f, indent=4)
-        print(f"Results and config saved to {output_file}")
+        print(f"Results and config saved to {args.output_file}")
 
 if __name__ == "__main__":
     main()
