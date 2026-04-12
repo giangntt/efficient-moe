@@ -53,7 +53,6 @@ export HF_ALLOW_CODE_EVAL=1
     --tasks ${TASK} \
     --batch_size ${BATCH_SIZE} \
     --limit ${LIMIT} \
-    --parallelize \
     --confirm_run_unsafe_code \
     ${EXTRA_ARGS} \
     --output_file ${OUTPUT_FILE}
