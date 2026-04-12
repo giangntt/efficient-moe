@@ -196,26 +196,77 @@ def prepare_mmlu_prompts(topic="social_sciences", max_samples_per_subject=5, see
 def prepare_gsm8k_prompts(sample_size=50, seed=42):
     """
     Prepare prompts from GSM8K dataset.
-    
+
     Args:
         sample_size: Number of examples to randomly sample
         seed: Random seed for reproducibility
-    
+
     Returns:
         list: List of formatted prompt strings
     """
     # Load GSM8K dataset
     gsm8k = load_dataset("openai/gsm8k", "main")["train"]
-    
+
     # Randomly sample examples
     random.seed(seed)
     sample_indices = random.sample(range(len(gsm8k)), min(sample_size, len(gsm8k)))
     gsm8k_sample = gsm8k.select(sample_indices)
-    
+
     # Format prompts
     prompts = [
         f"Question: {ex['question']}\nAnswer:"
         for ex in gsm8k_sample
     ]
-    
+
+    return prompts
+
+
+def prepare_aime25_prompts(sample_size=None, seed=42):
+    """
+    Prepare prompts from AIME 2025 dataset (MathArena/aime_2025).
+
+    Args:
+        sample_size: Number of examples to randomly sample (None = use all)
+        seed: Random seed for reproducibility
+
+    Returns:
+        list: List of formatted prompt strings
+    """
+    aime = load_dataset("MathArena/aime_2025", split="train")
+
+    if sample_size is not None and sample_size < len(aime):
+        random.seed(seed)
+        indices = random.sample(range(len(aime)), sample_size)
+        aime = aime.select(indices)
+
+    prompts = [
+        f"Problem: {ex['problem']}\nAnswer:"
+        for ex in aime
+    ]
+
+    return prompts
+
+
+def prepare_humaneval_prompts(sample_size=None, seed=42):
+    """
+    Prepare prompts from HumanEval dataset (openai/openai_humaneval).
+
+    Uses only the `prompt` field (function signature + docstring).
+
+    Args:
+        sample_size: Number of examples to randomly sample (None = use all)
+        seed: Random seed for reproducibility
+
+    Returns:
+        list: List of prompt strings
+    """
+    humaneval = load_dataset("openai/openai_humaneval", split="test")
+
+    if sample_size is not None and sample_size < len(humaneval):
+        random.seed(seed)
+        indices = random.sample(range(len(humaneval)), sample_size)
+        humaneval = humaneval.select(indices)
+
+    prompts = [ex["prompt"] for ex in humaneval]
+
     return prompts

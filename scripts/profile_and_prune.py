@@ -22,7 +22,13 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from utils.hook_utils import ExpertActivationHook
 from utils.router_utils import collect_router_logits
 from utils.analysis_utils import compute_all_stats
-from utils.data_utils import prepare_mmlu_prompts, prepare_gsm8k_prompts, MMLU_CATEGORIES
+from utils.data_utils import (
+    prepare_mmlu_prompts,
+    prepare_gsm8k_prompts,
+    prepare_aime25_prompts,
+    prepare_humaneval_prompts,
+    MMLU_CATEGORIES,
+)
 
 
 def parse_args():
@@ -51,10 +57,20 @@ def parse_args():
         help='Use GSM8K dataset for prompts'
     )
     parser.add_argument(
+        '--aime25',
+        action='store_true',
+        help='Use AIME 2025 (MathArena/aime_2025) dataset for prompts'
+    )
+    parser.add_argument(
+        '--humaneval',
+        action='store_true',
+        help='Use HumanEval (openai/openai_humaneval) dataset for prompts (prompt field only)'
+    )
+    parser.add_argument(
         '--sample_size',
         type=int,
         default=50,
-        help='Number of samples to use (for GSM8K or for max samples per subject of MMLU)'
+        help='Number of samples to use (GSM8K/AIME25/HumanEval, or max samples per subject of MMLU)'
     )
     
     # Pruning criteria
@@ -209,10 +225,20 @@ def load_prompts(args):
         prompts = prepare_gsm8k_prompts(sample_size=args.sample_size)
         print(f"Loaded {len(prompts)} prompts from GSM8K")
         return prompts
-    
+
+    elif args.aime25:
+        prompts = prepare_aime25_prompts(sample_size=args.sample_size)
+        print(f"Loaded {len(prompts)} prompts from AIME 2025")
+        return prompts
+
+    elif args.humaneval:
+        prompts = prepare_humaneval_prompts(sample_size=args.sample_size)
+        print(f"Loaded {len(prompts)} prompts from HumanEval")
+        return prompts
+
     else:
         raise ValueError(
-            "Must specify one of: --prompts_file, --mmlu_topic, or --gsm8k"
+            "Must specify one of: --prompts_file, --mmlu_topic, --gsm8k, --aime25, or --humaneval"
         )
 
 
