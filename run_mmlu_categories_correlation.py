@@ -5,13 +5,15 @@ and plot router-expert activation correlations for all 4 categories in one plot.
 Creates two plots: one for Spearman correlation and one for Pearson correlation.
 """
 
+import argparse
 import os
 import sys
 from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
 
-PLOTS_DIR = "outputs/plots"
+PROJECT_ROOT = Path(__file__).resolve().parent
+PLOTS_DIR = str(PROJECT_ROOT / "outputs" / "plots")
 from utils.data_utils import MMLU_CATEGORIES, prepare_mmlu_prompts
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -103,23 +105,52 @@ def plot_correlations(all_correlations, method='spearman', output_dir=None):
     plt.close()
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Run MMLU per-category router/expert correlation analysis"
+    )
+    parser.add_argument(
+        "--model_name",
+        type=str,
+        default="Qwen/Qwen1.5-MoE-A2.7B",
+        help="Model name or path to load",
+    )
+    parser.add_argument(
+        "--cuda_visible_devices",
+        type=str,
+        default=None,
+        help='CUDA visible devices (e.g., "0,1")',
+    )
+    parser.add_argument(
+        "--max_samples_per_subject",
+        type=int,
+        default=5,
+        help="Max samples per MMLU subject",
+    )
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        default=None,
+        help="Output directory for plots (default: outputs/plots under project root)",
+    )
+    return parser.parse_args()
+
+
 def main():
-    # Configuration
-    cuda_visible_devices = "1"
-    
+    args = parse_args()
+
     # Load model
     print("\nLoading model...")
-    if cuda_visible_devices is not None:
-        os.environ["CUDA_VISIBLE_DEVICES"] = str(cuda_visible_devices)
-    
+    if args.cuda_visible_devices is not None:
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(args.cuda_visible_devices)
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model_name = "Qwen/Qwen1.5-MoE-A2.7B"
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(args.model_name)
     model = AutoModelForCausalLM.from_pretrained(
-        model_name,
+        args.model_name,
         torch_dtype=torch.bfloat16,
         low_cpu_mem_usage=True,
-        device_map=None
+        device_map=None,
     )
     model = model.to(device)
     model.eval()
@@ -133,7 +164,7 @@ def main():
             tokenizer=tokenizer,
             category_name=category_name,
             device=device,
-            max_samples_per_subject=5
+            max_samples_per_subject=args.max_samples_per_subject,
         )
         all_stats[category_name] = stats
     
@@ -169,8 +200,8 @@ def main():
     print("Creating plots...")
     print("="*60)
     
-    plot_correlations(spearman_correlations, method='spearman')
-    plot_correlations(pearson_correlations, method='pearson')
+    plot_correlations(spearman_correlations, method='spearman', output_dir=args.output_dir)
+    plot_correlations(pearson_correlations, method='pearson', output_dir=args.output_dir)
     
     print("\n" + "="*60)
     print("Done! All processing complete.")

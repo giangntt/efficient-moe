@@ -12,10 +12,11 @@ import sys
 from pathlib import Path
 import numpy as np
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 # Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(PROJECT_ROOT))
 
-STATISTICS_DIR = "outputs/statistics"
+STATISTICS_DIR = str(PROJECT_ROOT / "outputs" / "statistics")
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from utils.hook_utils import ExpertActivationHook
