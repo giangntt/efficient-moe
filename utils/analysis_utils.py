@@ -80,13 +80,21 @@ def compute_router_stats(router_logits_layer, expert_acts_layer, top_k=None, dev
         denom = sel_mask.sum(dim=0).clamp(min=1.0)
         cond_mean = (sum_selected / denom).cpu().numpy()
 
-    # mean activation norm & variance per expert
+    # mean activation norm & variance per expert.
+    # `acts` may be either a list of raw tensors (legacy hook mode) or a
+    # pre-computed dict {'mean': float, 'var': float} from streaming hook mode.
     mean_act = []
     var_act = []
-    
+
     for e in range(E):
-        acts = expert_acts_layer.get(e, None)  # expects a list of tensors or None
-        if acts is None or len(acts) == 0:
+        acts = expert_acts_layer.get(e, None)
+        if acts is None:
+            mean_act.append(0.0)
+            var_act.append(0.0)
+        elif isinstance(acts, dict):
+            mean_act.append(float(acts.get('mean', 0.0)))
+            var_act.append(float(acts.get('var', 0.0)))
+        elif len(acts) == 0:
             mean_act.append(0.0)
             var_act.append(0.0)
         else:

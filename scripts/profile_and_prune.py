@@ -217,13 +217,18 @@ def load_prompts(args):
 
 
 def profile_model(model, tokenizer, prompts, device, args):
-    """Profile model by collecting router logits and expert activations."""
+    """Profile model by collecting router logits and expert activation stats.
+
+    Uses streaming mode for the activation hook so per-token L2 norms are
+    folded into running mean/variance instead of being stored as raw tensors.
+    Memory stays O(num_layers × num_experts) regardless of prompt count.
+    """
     print("\n" + "="*60)
     print("Profiling model...")
     print("="*60)
 
     # Register hooks and collect data
-    hook_manager = ExpertActivationHook()
+    hook_manager = ExpertActivationHook(streaming=True)
     hook_manager.register_hooks(model)
 
     # Collect router logits via generation
@@ -237,14 +242,14 @@ def profile_model(model, tokenizer, prompts, device, args):
         prefill_only=args.prefill_only,
     )
     router_logits = result['router_logits']
-    
-    # Get expert activations and clear hooks
-    expert_activations = hook_manager.expert_activations
+
+    # Get streaming expert activation stats and clear hooks
+    expert_activations = hook_manager.get_streaming_stats()
     hook_manager.clear_hooks()
-    
+
     print(f"Collected data for {len(router_logits)} layers")
     print(f"Total expert activation entries: {len(expert_activations)}")
-    
+
     return router_logits, expert_activations
 
 
