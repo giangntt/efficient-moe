@@ -228,7 +228,6 @@ def profile_model(model, tokenizer, prompts, device, args):
     # Collect router logits via generation
     result = collect_router_logits(
         model, tokenizer, prompts, device,
-        output_final_logits=False,
         max_new_tokens=args.max_new_tokens,
         temperature=args.temperature,
         top_p=args.top_p,

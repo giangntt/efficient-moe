@@ -34,8 +34,8 @@ def process_category(model, tokenizer, category_name, device, max_samples_per_su
     hook_manager = ExpertActivationHook()
     hook_manager.register_hooks(model)
     
-    # Collect router logits and final logits
-    result = collect_router_logits(model, tokenizer, prompts, device, output_final_logits=True)
+    # Collect router logits
+    result = collect_router_logits(model, tokenizer, prompts, device)
     router_logits = result['router_logits']
     
     # Get expert activations and clear hooks

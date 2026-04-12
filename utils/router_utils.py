@@ -11,7 +11,6 @@ def collect_router_logits(
     tokenizer,
     prompts,
     device,
-    output_final_logits=False,
     max_new_tokens: int = 512,
     temperature: Optional[float] = None,
     top_p: Optional[float] = None,
@@ -31,7 +30,6 @@ def collect_router_logits(
         tokenizer: Tokenizer for the model
         prompts: List of prompt strings
         device: Device for input tensors (first device of the model)
-        output_final_logits: Unused; kept for API compatibility
         max_new_tokens: Maximum tokens to generate per prompt
         temperature: Sampling temperature (None = greedy)
         top_p: Nucleus sampling probability
@@ -42,7 +40,6 @@ def collect_router_logits(
     Returns:
         dict: {
             'router_logits': dict[layer_idx] -> tensor [total_tokens, num_experts],
-            'final_logits': [] (placeholder for API compatibility)
         }
     """
     from utils.hook_utils import RouterLogitHook
@@ -97,7 +94,7 @@ def collect_router_logits(
     router_logits = router_hook.get_router_logits()
     router_hook.clear_hooks()
 
-    return {"router_logits": router_logits, "final_logits": []}
+    return {"router_logits": router_logits}
 
 
 def collect_router_logits_from_loader(model, loader, output_final_logits=False):
