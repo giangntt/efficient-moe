@@ -78,17 +78,13 @@ def patched_forward_zeroed_experts(self, hidden_states: torch.Tensor) -> torch.T
         (batch_size * sequence_length, hidden_dim), dtype=hidden_states.dtype, device=hidden_states.device
     )
 
-    # Check if experts are pruned and mask them out
+    expert_mask = torch.nn.functional.one_hot(
+        selected_experts, num_classes=self.num_experts
+    ).permute(2, 1, 0).float()
     pruned_experts_tensor = getattr(self, "pruned_experts_tensor", None)
     if pruned_experts_tensor is not None and pruned_experts_tensor.numel() > 0:
-        is_pruned = (selected_experts[..., None] == pruned_experts_tensor).any(dim=-1)
-    else:
-        is_pruned = torch.zeros_like(selected_experts, dtype=torch.bool)
-    selected_experts = selected_experts.masked_fill(is_pruned, -1)
-
-    # Build mask (ignore -1)
-    expert_mask = torch.nn.functional.one_hot(selected_experts.clamp(min=0), num_classes=self.num_experts).permute(2, 1, 0).float()
-    expert_mask *= (selected_experts >= 0).float().permute(1, 0)[None, :, :]
+        # Drop all dispatch slots for pruned experts; they will not appear in expert_hit.
+        expert_mask[pruned_experts_tensor] = 0
 
     expert_hit = torch.greater(expert_mask.sum(dim=(-1, -2)), 0).nonzero()
     for expert_idx in expert_hit:
