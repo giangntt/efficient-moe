@@ -46,6 +46,9 @@ def get_topk_experts_from_json(path, top_k=5, mode="most", criterion=None, out_p
     experts_to_prune = {}
     for k, v in sorted_experts.items():
         k_int = int(k)
+        if top_k == 0:
+            experts_to_prune[k_int] = []
+            continue
         v_int = [int(x) for x in v]
         if mode == "most":
             selected = v_int[:top_k]

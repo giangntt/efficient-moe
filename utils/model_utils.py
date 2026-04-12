@@ -37,6 +37,56 @@ def patched_forward_masked_experts(self, hidden_states: torch.Tensor) -> torch.T
     return final_hidden_states.reshape(batch_size, sequence_length, hidden_dim)
 
 
+def patched_forward_dynamic_routing(self, hidden_states: torch.Tensor) -> torch.Tensor:
+    """
+    Patched forward method for dynamic routing based on cumulative probability threshold.
+    Selects a variable number of experts (up to top_k) per token by accumulating
+    softmax routing probability until a cumulative threshold is reached.
+
+    Works with Qwen3MoeSparseMoeBlock (batched Qwen3MoeExperts).
+    """
+    batch_size, sequence_length, hidden_dim = hidden_states.shape
+    hidden_states_reshaped = hidden_states.view(-1, hidden_dim)
+
+    # Compute raw logits directly from gate weights so we can control routing
+    raw_logits = F.linear(hidden_states_reshaped, self.gate.weight)
+
+    # Mask pruned experts before softmax
+    pruned_experts_tensor = getattr(self, "pruned_experts_tensor", None)
+    if pruned_experts_tensor is not None and pruned_experts_tensor.numel() > 0:
+        pruned_experts_tensor = pruned_experts_tensor.to(raw_logits.device)
+        raw_logits[:, pruned_experts_tensor] = float('-inf')
+
+    routing_probs = F.softmax(raw_logits, dtype=torch.float, dim=-1)
+    routing_weights, selected_experts = torch.topk(routing_probs, self.gate.top_k, dim=-1)
+
+    # Dynamic routing: accumulate probability and cut off once threshold is reached
+    threshold = self.dynamic_routing_threshold
+    cumulative_weights = torch.cumsum(routing_weights, dim=-1)
+    shifted_cumsum = torch.zeros_like(cumulative_weights)
+    shifted_cumsum[..., 1:] = cumulative_weights[..., :-1]
+    selection_mask = shifted_cumsum < threshold  # True for experts to keep
+
+    # Zero out unselected experts' weights
+    routing_weights = routing_weights * selection_mask
+
+    # Track average number of experts activated
+    if hasattr(self, "num_activated_experts_log"):
+        avg_experts = selection_mask.sum(dim=-1).float().mean().item()
+        self.num_activated_experts_log.append(avg_experts)
+
+    # Normalize remaining weights
+    if self.gate.norm_topk_prob:
+        weight_sum = routing_weights.sum(dim=-1, keepdim=True)
+        routing_weights = routing_weights / (weight_sum + 1e-6)
+
+    routing_weights = routing_weights.to(hidden_states.dtype)
+
+    # Qwen3MoeExperts handles the per-expert computation internally
+    final_hidden_states = self.experts(hidden_states_reshaped, selected_experts, routing_weights)
+    return final_hidden_states.reshape(batch_size, sequence_length, hidden_dim)
+
+
 def patched_forward_zeroed_experts(self, hidden_states: torch.Tensor) -> torch.Tensor:
     """
     Patched forward method that zeros out pruned experts' routing weights after
@@ -77,8 +127,10 @@ def _get_pruned_subclass(base_cls, mode):
         forward_fn = patched_forward_masked_experts
     elif mode == "zero":
         forward_fn = patched_forward_zeroed_experts
+    elif mode == "dynamic":
+        forward_fn = patched_forward_dynamic_routing
     else:
-        raise ValueError(f"Unknown mode: {mode}. Use 'mask' or 'zero'.")
+        raise ValueError(f"Unknown mode: {mode}. Use 'mask', 'zero', or 'dynamic'.")
 
     new_cls = type(
         f"Pruned{base_cls.__name__}_{mode}",
@@ -89,7 +141,7 @@ def _get_pruned_subclass(base_cls, mode):
     return new_cls
 
 
-def apply_pruning(model, experts_to_prune, mode="zero"):
+def apply_pruning(model, experts_to_prune, mode="zero", dynamic_routing_threshold=0.8):
     """
     Apply expert pruning by reassigning each MoE block's class to a subclass that
     overrides forward. Subclassing keeps the patched method on a real class so
@@ -98,7 +150,8 @@ def apply_pruning(model, experts_to_prune, mode="zero"):
     Args:
         model: The model to prune.
         experts_to_prune: A dictionary where keys are layer indices and values are lists of expert indices to prune.
-        mode: "mask" (mask logits) or "zero" (zero out expert outputs)
+        mode: "mask" (mask logits), "zero" (zero out expert outputs), or "dynamic" (dynamic routing)
+        dynamic_routing_threshold: Cumulative probability threshold for dynamic routing.
     """
     # Get the actual model (handle both model and model.model cases)
     actual_model = model.model if hasattr(model, 'model') else model
@@ -115,6 +168,9 @@ def apply_pruning(model, experts_to_prune, mode="zero"):
                 else torch.tensor([], device=block_device, dtype=torch.long)
             )
             moe_block.pruned_experts_tensor = pruned_experts_tensor
+            if mode == "dynamic":
+                moe_block.num_activated_experts_log = []
+                moe_block.dynamic_routing_threshold = dynamic_routing_threshold
             moe_block.__class__ = _get_pruned_subclass(type(moe_block), mode)
 
 
