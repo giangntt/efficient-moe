@@ -38,16 +38,15 @@
 
 ## Known Bugs
 
-### BUG-01: `plt.show()` dead code in visualization utils
-- **File:** `utils/visualization_utils.py:79,115` (`plot_bar`, `plot_histogram`)
-- **Issue:** `if ax is None: plt.show()` branch is unreachable — `ax` is always provided by callers
-- **Risk:** No functional bug, but misleading code; interactive display never triggered
+### BUG-01: `plt.show()` dead code in visualization utils ✅ RESOLVED (2026-04-12)
+- **File:** `utils/visualization_utils.py` (`plot_bar`, `plot_histogram`)
+- **Issue:** `if ax is None: plt.show()` branch was unreachable — both functions reassign `ax` earlier in the same call when None is passed in.
+- **Resolution:** Removed the dead trailing `if ax is None` blocks from both helpers. Commit `ec6dbe2`.
 
-### BUG-02: Unbounded hook activation accumulation (OOM risk)
-- **File:** `utils/hook_utils.py` — `ExpertActivationHook.expert_activations`
-- **Issue:** Tensors accumulate across ALL prompts in a single dict without clearing between batches; no streaming stats
-- **Risk:** Out-of-memory on large profiling runs (many prompts × many experts × activation size)
-- **Fix:** Accumulate running statistics (mean/variance) online; discard raw tensors after each forward pass
+### BUG-02: Unbounded hook activation accumulation (OOM risk) ✅ RESOLVED (2026-04-12)
+- **File:** `utils/hook_utils.py`, `utils/analysis_utils.py`, `scripts/profile_and_prune.py`
+- **Issue:** `ExpertActivationHook` appended every captured tensor to a per-expert list, so memory grew with prompts × tokens × hidden_dim.
+- **Resolution:** Added an opt-in `streaming=True` mode to `ExpertActivationHook` that folds per-token L2 norms into a Welford running mean / variance per `(layer, expert)` and discards the raw tensor (memory now O(num_layers × num_experts)). `compute_router_stats` also accepts a `{'mean','var'}` dict per expert, so the streaming and raw paths produce identical `mean_act` / `var_act` and identical pruning decisions (verified numerically). `scripts/profile_and_prune.py` switched to streaming mode; notebook callers that need raw tensors (SVD overlap, super-experts) keep the default non-streaming behaviour. Commit `95ec07b`.
 
 ## Performance Issues
 
@@ -93,4 +92,4 @@
 ---
 
 *Concerns analysis: 2026-04-10*
-*Updated 2026-04-12: TD-02, TD-04, TD-05, TD-06, FRAG-03 resolved.*
+*Updated 2026-04-12: TD-02, TD-04, TD-05, TD-06, BUG-01, BUG-02, FRAG-03 resolved.*
