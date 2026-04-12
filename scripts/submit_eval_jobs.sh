@@ -21,7 +21,7 @@ EXTRA_TASKS=("aime25" "humaneval")
 
 PROJECT="13004345"
 QUEUE="normal"
-WALLTIME="2:00:00"
+WALLTIME="4:00:00"
 SELECT="1:ngpus=2"
 
 mkdir -p "$OUTPUT_DIR" logs

@@ -39,7 +39,7 @@ def parse_args():
 # -------------------
 def main():
     args = parse_args()
-    model = HFLM(args.model_name, device=args.device, dtype="bfloat16")
+    model = HFLM(args.model_name, parallelize=True, dtype="bfloat16")
 
     if args.use_pruned_model and args.pruned_metadata:
         experts_to_prune = get_experts_to_prune_from_json(
