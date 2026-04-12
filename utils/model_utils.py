@@ -63,35 +63,59 @@ def patched_forward_zeroed_experts(self, hidden_states: torch.Tensor) -> torch.T
     final_hidden_states = self.experts(hidden_states_reshaped, selected_experts, routing_weights)
     return final_hidden_states.reshape(batch_size, sequence_length, hidden_dim)
 
+_PATCHED_CLASS_CACHE: dict = {}
+
+
+def _get_pruned_subclass(base_cls, mode):
+    """Return (and cache) a subclass of `base_cls` whose forward implements pruning."""
+    key = (base_cls, mode)
+    cached = _PATCHED_CLASS_CACHE.get(key)
+    if cached is not None:
+        return cached
+
+    if mode == "mask":
+        forward_fn = patched_forward_masked_experts
+    elif mode == "zero":
+        forward_fn = patched_forward_zeroed_experts
+    else:
+        raise ValueError(f"Unknown mode: {mode}. Use 'mask' or 'zero'.")
+
+    new_cls = type(
+        f"Pruned{base_cls.__name__}_{mode}",
+        (base_cls,),
+        {"forward": forward_fn},
+    )
+    _PATCHED_CLASS_CACHE[key] = new_cls
+    return new_cls
+
+
 def apply_pruning(model, experts_to_prune, mode="zero"):
     """
-    Monkey patch each OlmoeSparseMoeBlock forward and assign pruned experts per layer.
+    Apply expert pruning by reassigning each MoE block's class to a subclass that
+    overrides forward. Subclassing keeps the patched method on a real class so
+    torch.compile, DataParallel, and serialization continue to work.
 
     Args:
         model: The model to prune.
         experts_to_prune: A dictionary where keys are layer indices and values are lists of expert indices to prune.
         mode: "mask" (mask logits) or "zero" (zero out expert outputs)
     """
-    if mode == "mask":
-        patch_fn = patched_forward_masked_experts
-    elif mode == "zero":
-        patch_fn = patched_forward_zeroed_experts
-    else:
-        raise ValueError(f"Unknown mode: {mode}. Use 'mask' or 'zero'.")
-
     # Get the actual model (handle both model and model.model cases)
     actual_model = model.model if hasattr(model, 'model') else model
-    # Get device from model parameters
-    device = next(actual_model.parameters()).device
-    
+
     for layer_idx, layer in enumerate(actual_model.layers):
-        moe_block = layer.mlp  
+        moe_block = layer.mlp
         if hasattr(moe_block, "gate") and hasattr(moe_block, "experts"):
             pruned_experts = experts_to_prune.get(layer_idx, [])
-            # Pre-create tensor once during pruning setup to avoid recreating it every forward pass
-            pruned_experts_tensor = torch.tensor(list(pruned_experts), device=device, dtype=torch.long) if pruned_experts else torch.tensor([], device=device, dtype=torch.long)
+            # Place tensor on the device of this specific MoE block (handles device_map="auto").
+            block_device = next(moe_block.parameters()).device
+            pruned_experts_tensor = (
+                torch.tensor(list(pruned_experts), device=block_device, dtype=torch.long)
+                if pruned_experts
+                else torch.tensor([], device=block_device, dtype=torch.long)
+            )
             moe_block.pruned_experts_tensor = pruned_experts_tensor
-            moe_block.forward = patch_fn.__get__(moe_block, moe_block.__class__)
+            moe_block.__class__ = _get_pruned_subclass(type(moe_block), mode)
 
 
 def evaluate_model(model, val_loader):
