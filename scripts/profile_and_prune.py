@@ -248,7 +248,7 @@ def profile_model(model, tokenizer, prompts, device, args):
     return router_logits, expert_activations
 
 
-def compute_statistics(router_logits, expert_activations, top_k=4):
+def compute_statistics(router_logits, expert_activations, top_k):
     """Compute router and expert statistics."""
     print("\n" + "="*60)
     print("Computing statistics...")
@@ -493,8 +493,9 @@ def main():
     # Profile model
     router_logits, expert_activations = profile_model(model, tokenizer, prompts, device, args)
     
-    # Compute statistics
-    stats = compute_statistics(router_logits, expert_activations, top_k=4)
+    # Compute statistics — read top_k from model config so this works for any MoE arch
+    top_k = model.config.num_experts_per_tok
+    stats = compute_statistics(router_logits, expert_activations, top_k=top_k)
     
     # Determine experts to prune
     experts_to_prune = determine_experts_to_prune(stats, router_logits, args)
