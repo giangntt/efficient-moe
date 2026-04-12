@@ -234,9 +234,10 @@ def prepare_aime25_prompts(sample_size=None, seed=42):
     """
     aime = load_dataset("MathArena/aime_2025", split="train")
 
-    if sample_size is not None and sample_size < len(aime):
+    if sample_size is not None:
+        n = min(sample_size, len(aime))
         random.seed(seed)
-        indices = random.sample(range(len(aime)), sample_size)
+        indices = random.sample(range(len(aime)), n)
         aime = aime.select(indices)
 
     prompts = [
@@ -262,9 +263,10 @@ def prepare_humaneval_prompts(sample_size=None, seed=42):
     """
     humaneval = load_dataset("openai/openai_humaneval", split="test")
 
-    if sample_size is not None and sample_size < len(humaneval):
+    if sample_size is not None:
+        n = min(sample_size, len(humaneval))
         random.seed(seed)
-        indices = random.sample(range(len(humaneval)), sample_size)
+        indices = random.sample(range(len(humaneval)), n)
         humaneval = humaneval.select(indices)
 
     prompts = [ex["prompt"] for ex in humaneval]
