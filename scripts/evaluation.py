@@ -29,7 +29,9 @@ def parse_args():
     parser.add_argument('--pruning_method', type=str, choices=['mask', 'zero'], default='zero', help='Method to use for pruning experts')
     parser.add_argument('--device', type=str, default='cuda', help='Device for model')
     parser.add_argument('--output_file', type=str, default=None, help='File to save results JSON')
-    
+    parser.add_argument('--confirm_run_unsafe_code', action='store_true',
+                        help='Allow lm_eval to execute generated code (required for humaneval)')
+
     return parser.parse_args()
 
 # -------------------
@@ -56,6 +58,8 @@ def main():
     )
     if args.limit:
         eval_kwargs['limit'] = args.limit
+    if args.confirm_run_unsafe_code:
+        eval_kwargs['confirm_run_unsafe_code'] = True
 
     t0 = time.perf_counter()
     results = simple_evaluate(**eval_kwargs)

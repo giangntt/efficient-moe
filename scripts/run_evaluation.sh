@@ -8,7 +8,10 @@
 # Full evaluation with all MMLU tasks:
 # TASKS="mmlu_stem mmlu_social_sciences mmlu_humanities mmlu_other"
 
-TASKS="mmlu_stem"
+TASKS="mmlu_stem aime25 humaneval"
+# humaneval executes model-generated code; lm_eval requires explicit opt-in
+export HF_ALLOW_CODE_EVAL=1
+UNSAFE_CODE_ARG="--confirm_run_unsafe_code"
 BATCH_SIZE=8
 # Set LIMIT to a number to limit examples, or leave empty/unset for no limit
 LIMIT=30
@@ -37,6 +40,7 @@ if [ "$EVALUATE_FULL_MODEL" = "true" ]; then
         --tasks $TASKS \
         --batch_size $BATCH_SIZE \
         $LIMIT_ARG \
+        $UNSAFE_CODE_ARG \
         --device $DEVICE \
         --output_file "$BASE_OUTPUT_DIR/full_model.json"
     echo "  Wall time: ${SECONDS}s"
@@ -70,6 +74,7 @@ for config in "${PRUNING_CONFIGS[@]}"; do
         --tasks $TASKS \
         --batch_size $BATCH_SIZE \
         $LIMIT_ARG \
+        $UNSAFE_CODE_ARG \
         --use_pruned_model \
         --pruned_metadata "$PRUNED_METADATA_DIR/$metadata_file" \
         --pruning_method $pruning_method \

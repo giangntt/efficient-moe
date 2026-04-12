@@ -17,6 +17,7 @@ OUTPUT_DIR="outputs/evaluation_results"
 STATS_DIR="outputs/statistics"
 
 TOPICS=("stem" "humanities" "other" "social_sciences")
+EXTRA_TASKS=("aime25" "humaneval")
 
 PROJECT="13004345"
 QUEUE="normal"
@@ -45,6 +46,7 @@ submit_eval_job() {
 cd \$PBS_O_WORKDIR
 
 export CUDA_VISIBLE_DEVICES=${DEVICES}
+export HF_ALLOW_CODE_EVAL=1
 
 \$PBS_O_WORKDIR/.venv/bin/python scripts/evaluation.py \
     --model_name ${MODEL} \
@@ -52,6 +54,7 @@ export CUDA_VISIBLE_DEVICES=${DEVICES}
     --batch_size ${BATCH_SIZE} \
     --limit ${LIMIT} \
     --parallelize \
+    --confirm_run_unsafe_code \
     ${EXTRA_ARGS} \
     --output_file ${OUTPUT_FILE}
 EOF
@@ -61,28 +64,38 @@ EOF
     echo "Submitted job: ${JOB_NAME} -> ${OUTPUT_FILE}"
 }
 
-for TOPIC in "${TOPICS[@]}"; do
-    TASK="mmlu_${TOPIC}"
-    METADATA="${STATS_DIR}/expert_stats_${TOPIC}.json"
+# ── Helper: submit all three variants (original + pruned zero/mask) ───────────
+submit_variants() {
+    local NAME="$1"   # short identifier used in job/output names
+    local TASK="$2"   # lm_eval task name
+    local METADATA="${STATS_DIR}/expert_stats_${NAME}.json"
 
     # 1. Original model
     submit_eval_job \
-        "eval_${TOPIC}_original" \
+        "eval_${NAME}_original" \
         "${TASK}" \
         "" \
-        "${OUTPUT_DIR}/${TOPIC}_original.json"
+        "${OUTPUT_DIR}/${NAME}_original.json"
 
     # 2. Pruned model — zero method
     submit_eval_job \
-        "eval_${TOPIC}_pruned_zero" \
+        "eval_${NAME}_pruned_zero" \
         "${TASK}" \
         "--use_pruned_model --pruned_metadata ${METADATA} --pruning_method zero" \
-        "${OUTPUT_DIR}/${TOPIC}_pruned_zero.json"
+        "${OUTPUT_DIR}/${NAME}_pruned_zero.json"
 
     # 3. Pruned model — mask method
     submit_eval_job \
-        "eval_${TOPIC}_pruned_mask" \
+        "eval_${NAME}_pruned_mask" \
         "${TASK}" \
         "--use_pruned_model --pruned_metadata ${METADATA} --pruning_method mask" \
-        "${OUTPUT_DIR}/${TOPIC}_pruned_mask.json"
+        "${OUTPUT_DIR}/${NAME}_pruned_mask.json"
+}
+
+for TOPIC in "${TOPICS[@]}"; do
+    submit_variants "${TOPIC}" "mmlu_${TOPIC}"
+done
+
+for TASK in "${EXTRA_TASKS[@]}"; do
+    submit_variants "${TASK}" "${TASK}"
 done
