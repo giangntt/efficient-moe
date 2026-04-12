@@ -76,8 +76,6 @@ def plot_bar(
     if ylim is not None:
         ax.set_ylim(*ylim)
 
-    if ax is None:
-        plt.show()
 
 def plot_histogram(values, ax=None, bins=30, color="orange", alpha=0.8, mean_line=None, mean_label=None,
                    title=None, xlabel=None, ylabel=None, xlim=None):
@@ -112,6 +110,3 @@ def plot_histogram(values, ax=None, bins=30, color="orange", alpha=0.8, mean_lin
         ax.legend()
     if xlim is not None:
         ax.set_xlim(xlim)
-    if ax is None:
-        plt.tight_layout()
-        plt.show()
