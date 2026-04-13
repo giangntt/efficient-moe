@@ -138,8 +138,11 @@ def main():
             expert_activation_report["overall_average"] = f"{total_avg / num_layers:.2f}"
 
     if args.output_file:
+        config = vars(args)
+        if args.pruning_method != "dynamic":
+            config.pop("dynamic_routing_threshold", None)
         output_data = {
-            "config": vars(args),
+            "config": config,
             "latency": {
                 "eval_s": eval_s,
                 **({"ms_per_question": ms_per_sample} if ms_per_sample else {}),
