@@ -1,0 +1,33 @@
+{
+    "config": {
+        "model_name": "/home/users/ntu/hong0259/scratch/models/Qwen3-30B-A3B",
+        "tasks": [
+            "humaneval"
+        ],
+        "batch_size": 8,
+        "limit": 100,
+        "use_pruned_model": false,
+        "pruned_metadata": null,
+        "k": 20,
+        "pruning_method": "zero",
+        "device": "cuda",
+        "output_file": "outputs/evaluation_results/humaneval_original.json",
+        "confirm_run_unsafe_code": true,
+        "max_new_tokens": 10000,
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "top_k": 20,
+        "enable_thinking": false
+    },
+    "latency": {
+        "eval_s": 3202.5716105718166,
+        "ms_per_question": 32025.71610571817
+    },
+    "results": {
+        "humaneval": {
+            "alias": "humaneval",
+            "pass@1,create_test": 0.45,
+            "pass@1_stderr,create_test": 0.050000000000000024
+        }
+    }
+}
