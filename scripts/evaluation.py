@@ -33,6 +33,38 @@ def parse_args():
     parser.add_argument('--confirm_run_unsafe_code', action='store_true',
                         help='Allow lm_eval to execute generated code (required for humaneval)')
 
+    # Generation parameters
+    parser.add_argument(
+        '--max_new_tokens',
+        type=int,
+        default=10000,
+        help='Maximum new tokens to generate per prompt'
+    )
+    parser.add_argument(
+        '--temperature',
+        type=float,
+        default=1.0,
+        help='Sampling temperature (set to 0 for greedy)'
+    )
+    parser.add_argument(
+        '--top_p',
+        type=float,
+        default=0.95,
+        help='Nucleus sampling top-p'
+    )
+    parser.add_argument(
+        '--top_k',
+        type=int,
+        default=20,
+        help='Top-k sampling'
+    )
+    parser.add_argument(
+        '--enable_thinking',
+        action='store_true',
+        default=False,
+        help='Enable Qwen3 thinking mode (default: disabled)'
+    )
+
     return parser.parse_args()
 
 # -------------------
@@ -40,7 +72,12 @@ def parse_args():
 # -------------------
 def main():
     args = parse_args()
-    model = HFLM(args.model_name, parallelize=True, dtype="bfloat16")
+    model = HFLM(
+        args.model_name,
+        parallelize=True,
+        dtype="bfloat16",
+        enable_thinking=args.enable_thinking,
+    )
 
     if args.use_pruned_model and args.pruned_metadata:
         experts_to_prune = get_experts_to_prune_from_json(
@@ -54,12 +91,19 @@ def main():
         )
 
     # Prepare arguments for simple_evaluate
+    gen_kwargs = {
+        "max_new_tokens": args.max_new_tokens,
+        "temperature": args.temperature,
+        "top_p": args.top_p,
+        "top_k": args.top_k,
+    }
     eval_kwargs = dict(
         model=model,
         tasks=args.tasks,
         log_samples=False,
         device=args.device,
         batch_size=args.batch_size,
+        gen_kwargs=gen_kwargs,
     )
     if args.limit:
         eval_kwargs['limit'] = args.limit
