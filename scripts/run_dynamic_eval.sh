@@ -28,7 +28,6 @@ do
         --limit 300 \
         --use_pruned_model \
         --pruned_metadata "prune_experts/super_experts_ids.json" \
-        --mode least \
         --pruning_method dynamic \
         --k 0 \
         --dynamic_routing_threshold "$threshold" \
