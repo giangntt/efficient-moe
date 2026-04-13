@@ -171,7 +171,17 @@ def apply_pruning(model, experts_to_prune, mode="zero", dynamic_routing_threshol
             if mode == "dynamic":
                 moe_block.num_activated_experts_log = []
                 moe_block.dynamic_routing_threshold = dynamic_routing_threshold
-            moe_block.__class__ = _get_pruned_subclass(type(moe_block), mode)
+            new_cls = _get_pruned_subclass(type(moe_block), mode)
+            moe_block.__class__ = new_cls
+            # accelerate's device_map="auto" installs an instance-level `forward`
+            # (a functools.partial wrapper) that delegates to `_old_forward`.
+            # Instance attributes take priority over class-level methods, so the
+            # __class__ reassignment above would be silently bypassed.
+            # Fix: if accelerate has stored the original forward in `_old_forward`,
+            # replace it with the patched class method so the dispatch wrapper calls
+            # the pruned forward instead of the original one.
+            if hasattr(moe_block, "_old_forward"):
+                moe_block._old_forward = new_cls.forward.__get__(moe_block, new_cls)
 
 
 def evaluate_model(model, val_loader):
