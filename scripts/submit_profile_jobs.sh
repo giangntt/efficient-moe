@@ -5,6 +5,7 @@
 
 MODEL="$HOME/scratch/models/Qwen3-30B-A3B"
 SAMPLE_SIZE=50
+MAX_PRUNED_EXPERTS_PER_LAYER=60
 OUTPUT_DIR="outputs/statistics"
 DEVICES="0,1"
 PROJECT="13004345"
@@ -42,6 +43,7 @@ cd \$PBS_O_WORKDIR
     --sample_size ${SAMPLE_SIZE} \
     --output_file ${OUTPUT_FILE} \
     --cuda_visible_devices ${DEVICES} \
+    --max_pruned_experts_per_layer ${MAX_PRUNED_EXPERTS_PER_LAYER} \
     --prefill_only
 EOF
 )
