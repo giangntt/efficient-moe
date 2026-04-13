@@ -29,6 +29,12 @@ def patched_forward_masked_experts(self, hidden_states: torch.Tensor) -> torch.T
     # Replicate Qwen3MoeTopKRouter routing logic on masked logits
     router_logits = F.softmax(raw_logits, dtype=torch.float, dim=-1)
     routing_weights, selected_experts = torch.topk(router_logits, self.gate.top_k, dim=-1)
+
+    # Track average number of experts activated (top_k entries with > 0 weight)
+    if hasattr(self, "num_activated_experts_log"):
+        avg_experts = (routing_weights > 0).sum(dim=-1).float().mean().item()
+        self.num_activated_experts_log.append(avg_experts)
+
     if self.gate.norm_topk_prob:
         routing_weights /= routing_weights.sum(dim=-1, keepdim=True)
     routing_weights = routing_weights.to(hidden_states.dtype)
@@ -91,11 +97,8 @@ def patched_forward_zeroed_experts(self, hidden_states: torch.Tensor) -> torch.T
     """
     Patched forward method that zeros out pruned experts' routing weights after
     normal routing. Tokens may still be selected for pruned experts but their
-    contribution is zeroed (no renormalization).
-
-    Works with Qwen3MoeSparseMoeBlock where self.gate is Qwen3MoeTopKRouter
-    (returns (router_logits, router_scores, router_indices)) and self.experts
-    is Qwen3MoeExperts (batched tensor, not a list of modules).
+    contribution is zeroed (no renormalization). Keeps the call to
+    `self.experts(...)` so the fast `grouped_mm` / `batched_mm` backend is used.
     """
     batch_size, sequence_length, hidden_dim = hidden_states.shape
     hidden_states_reshaped = hidden_states.view(-1, hidden_dim)
@@ -109,6 +112,11 @@ def patched_forward_zeroed_experts(self, hidden_states: torch.Tensor) -> torch.T
         pruned_experts_tensor = pruned_experts_tensor.to(selected_experts.device)
         is_pruned = (selected_experts[..., None] == pruned_experts_tensor).any(dim=-1)
         routing_weights = routing_weights.masked_fill(is_pruned, 0.0)
+
+    # Track average number of experts that effectively contribute (non-zero weight)
+    if hasattr(self, "num_activated_experts_log"):
+        avg_experts = (routing_weights != 0).sum(dim=-1).float().mean().item()
+        self.num_activated_experts_log.append(avg_experts)
 
     final_hidden_states = self.experts(hidden_states_reshaped, selected_experts, routing_weights)
     return final_hidden_states.reshape(batch_size, sequence_length, hidden_dim)
@@ -168,8 +176,8 @@ def apply_pruning(model, experts_to_prune, mode="zero", dynamic_routing_threshol
                 else torch.tensor([], device=block_device, dtype=torch.long)
             )
             moe_block.pruned_experts_tensor = pruned_experts_tensor
+            moe_block.num_activated_experts_log = []
             if mode == "dynamic":
-                moe_block.num_activated_experts_log = []
                 moe_block.dynamic_routing_threshold = dynamic_routing_threshold
             new_cls = _get_pruned_subclass(type(moe_block), mode)
             moe_block.__class__ = new_cls

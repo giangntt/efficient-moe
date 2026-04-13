@@ -126,21 +126,20 @@ def main():
           + (f"  ({ms_per_sample:.1f} ms/question)" if ms_per_sample else ""))
     print(results)
 
-    # Collect expert activation stats for dynamic routing
+    # Collect expert activation stats from any patched MoE block
     expert_activation_report = {}
-    if args.pruning_method == "dynamic":
-        actual_model = model.model.model if hasattr(model.model, 'model') else model.model
-        total_avg = 0
-        num_layers = 0
-        for i, layer in enumerate(actual_model.layers):
-            moe_block = layer.mlp
-            if hasattr(moe_block, "num_activated_experts_log") and moe_block.num_activated_experts_log:
-                avg_experts = sum(moe_block.num_activated_experts_log) / len(moe_block.num_activated_experts_log)
-                expert_activation_report[f"layer_{i}"] = f"{avg_experts:.2f}"
-                total_avg += avg_experts
-                num_layers += 1
-        if num_layers > 0:
-            expert_activation_report["overall_average"] = f"{total_avg / num_layers:.2f}"
+    actual_model = model.model.model if hasattr(model.model, 'model') else model.model
+    total_avg = 0
+    num_layers = 0
+    for i, layer in enumerate(actual_model.layers):
+        moe_block = layer.mlp
+        if hasattr(moe_block, "num_activated_experts_log") and moe_block.num_activated_experts_log:
+            avg_experts = sum(moe_block.num_activated_experts_log) / len(moe_block.num_activated_experts_log)
+            expert_activation_report[f"layer_{i}"] = f"{avg_experts:.2f}"
+            total_avg += avg_experts
+            num_layers += 1
+    if num_layers > 0:
+        expert_activation_report["overall_average"] = f"{total_avg / num_layers:.2f}"
 
     if args.output_file:
         config = vars(args)
