@@ -1,0 +1,98 @@
+{
+    "config": {
+        "model_name": "/home/users/ntu/hong0259/scratch/models/Qwen3-30B-A3B",
+        "tasks": [
+            "mmlu_other"
+        ],
+        "batch_size": 8,
+        "limit": 100,
+        "use_pruned_model": true,
+        "pruned_metadata": "outputs/statistics/expert_stats_other.json",
+        "k": 20,
+        "pruning_method": "zero",
+        "device": "cuda",
+        "output_file": "outputs/evaluation_results/other_pruned_zero.json",
+        "confirm_run_unsafe_code": true,
+        "max_new_tokens": 10000,
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "top_k": 20,
+        "enable_thinking": false
+    },
+    "latency": {
+        "eval_s": 332.9827072387561,
+        "ms_per_question": 3329.827072387561
+    },
+    "results": {
+        "mmlu_other": {
+            "acc,none": 0.7838461538461539,
+            "acc_stderr,none": 0.010695999206235181,
+            "alias": "other"
+        },
+        "mmlu_business_ethics": {
+            "alias": " - business_ethics",
+            "acc,none": 0.83,
+            "acc_stderr,none": 0.03775251680686369
+        },
+        "mmlu_clinical_knowledge": {
+            "alias": " - clinical_knowledge",
+            "acc,none": 0.81,
+            "acc_stderr,none": 0.039427724440366255
+        },
+        "mmlu_college_medicine": {
+            "alias": " - college_medicine",
+            "acc,none": 0.8,
+            "acc_stderr,none": 0.04020151261036849
+        },
+        "mmlu_global_facts": {
+            "alias": " - global_facts",
+            "acc,none": 0.42,
+            "acc_stderr,none": 0.04960449637488583
+        },
+        "mmlu_human_aging": {
+            "alias": " - human_aging",
+            "acc,none": 0.78,
+            "acc_stderr,none": 0.041633319989322654
+        },
+        "mmlu_management": {
+            "alias": " - management",
+            "acc,none": 0.87,
+            "acc_stderr,none": 0.033799766898963114
+        },
+        "mmlu_marketing": {
+            "alias": " - marketing",
+            "acc,none": 0.95,
+            "acc_stderr,none": 0.021904291355759033
+        },
+        "mmlu_medical_genetics": {
+            "alias": " - medical_genetics",
+            "acc,none": 0.93,
+            "acc_stderr,none": 0.02564323999762428
+        },
+        "mmlu_miscellaneous": {
+            "alias": " - miscellaneous",
+            "acc,none": 0.89,
+            "acc_stderr,none": 0.031446603773522014
+        },
+        "mmlu_nutrition": {
+            "alias": " - nutrition",
+            "acc,none": 0.86,
+            "acc_stderr,none": 0.0348735088019777
+        },
+        "mmlu_professional_accounting": {
+            "alias": " - professional_accounting",
+            "acc,none": 0.63,
+            "acc_stderr,none": 0.048523658709390974
+        },
+        "mmlu_professional_medicine": {
+            "alias": " - professional_medicine",
+            "acc,none": 0.86,
+            "acc_stderr,none": 0.0348735088019777
+        },
+        "mmlu_virology": {
+            "alias": " - virology",
+            "acc,none": 0.56,
+            "acc_stderr,none": 0.049888765156985884
+        }
+    }
+}
