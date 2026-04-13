@@ -79,11 +79,16 @@ def main():
         enable_thinking=args.enable_thinking,
     )
 
+    experts_to_prune = {}
     if args.use_pruned_model and args.pruned_metadata:
         experts_to_prune = get_experts_to_prune_from_json(
             path=args.pruned_metadata,
             k=args.k
         )
+
+    # Patch MoE blocks when pruning OR when dynamic routing is requested
+    # (dynamic routing operates on the full model, so no pruned metadata needed)
+    if args.use_pruned_model or args.pruning_method == "dynamic":
         apply_pruning(
             model.model, experts_to_prune,
             mode=args.pruning_method,
