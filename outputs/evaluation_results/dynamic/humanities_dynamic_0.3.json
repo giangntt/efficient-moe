@@ -1,0 +1,150 @@
+{
+    "config": {
+        "model_name": "/home/users/ntu/hong0259/scratch/models/Qwen3-30B-A3B",
+        "tasks": [
+            "mmlu_humanities"
+        ],
+        "batch_size": 8,
+        "limit": 100,
+        "use_pruned_model": false,
+        "pruned_metadata": null,
+        "k": 20,
+        "pruning_method": "dynamic",
+        "dynamic_routing_threshold": 0.3,
+        "device": "cuda",
+        "output_file": "outputs/evaluation_results/dynamic/humanities_dynamic_0.3.json",
+        "confirm_run_unsafe_code": true,
+        "max_new_tokens": 10000,
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "top_k": 20,
+        "enable_thinking": false
+    },
+    "latency": {
+        "eval_s": 416.8428725078702,
+        "ms_per_question": 4168.428725078702
+    },
+    "results": {
+        "mmlu_humanities": {
+            "acc,none": 0.7684615384615384,
+            "acc_stderr,none": 0.011098043837214324,
+            "alias": "humanities"
+        },
+        "mmlu_formal_logic": {
+            "alias": " - formal_logic",
+            "acc,none": 0.68,
+            "acc_stderr,none": 0.046882617226215076
+        },
+        "mmlu_high_school_european_history": {
+            "alias": " - high_school_european_history",
+            "acc,none": 0.82,
+            "acc_stderr,none": 0.03861229196653691
+        },
+        "mmlu_high_school_us_history": {
+            "alias": " - high_school_us_history",
+            "acc,none": 0.94,
+            "acc_stderr,none": 0.023868325657594204
+        },
+        "mmlu_high_school_world_history": {
+            "alias": " - high_school_world_history",
+            "acc,none": 0.89,
+            "acc_stderr,none": 0.031446603773522014
+        },
+        "mmlu_international_law": {
+            "alias": " - international_law",
+            "acc,none": 0.9,
+            "acc_stderr,none": 0.03015113445777636
+        },
+        "mmlu_jurisprudence": {
+            "alias": " - jurisprudence",
+            "acc,none": 0.84,
+            "acc_stderr,none": 0.03684529491774706
+        },
+        "mmlu_logical_fallacies": {
+            "alias": " - logical_fallacies",
+            "acc,none": 0.84,
+            "acc_stderr,none": 0.03684529491774706
+        },
+        "mmlu_moral_disputes": {
+            "alias": " - moral_disputes",
+            "acc,none": 0.71,
+            "acc_stderr,none": 0.045604802157206865
+        },
+        "mmlu_moral_scenarios": {
+            "alias": " - moral_scenarios",
+            "acc,none": 0.45,
+            "acc_stderr,none": 0.05
+        },
+        "mmlu_philosophy": {
+            "alias": " - philosophy",
+            "acc,none": 0.78,
+            "acc_stderr,none": 0.041633319989322654
+        },
+        "mmlu_prehistory": {
+            "alias": " - prehistory",
+            "acc,none": 0.81,
+            "acc_stderr,none": 0.039427724440366255
+        },
+        "mmlu_professional_law": {
+            "alias": " - professional_law",
+            "acc,none": 0.52,
+            "acc_stderr,none": 0.05021167315686783
+        },
+        "mmlu_world_religions": {
+            "alias": " - world_religions",
+            "acc,none": 0.81,
+            "acc_stderr,none": 0.039427724440366255
+        }
+    },
+    "expert_activation_report": {
+        "layer_0": "6.91",
+        "layer_1": "7.22",
+        "layer_2": "6.77",
+        "layer_3": "6.36",
+        "layer_4": "6.79",
+        "layer_5": "6.69",
+        "layer_6": "6.50",
+        "layer_7": "6.11",
+        "layer_8": "6.64",
+        "layer_9": "6.42",
+        "layer_10": "6.84",
+        "layer_11": "6.68",
+        "layer_12": "6.90",
+        "layer_13": "6.69",
+        "layer_14": "6.49",
+        "layer_15": "6.48",
+        "layer_16": "6.43",
+        "layer_17": "6.29",
+        "layer_18": "5.76",
+        "layer_19": "5.51",
+        "layer_20": "6.47",
+        "layer_21": "6.34",
+        "layer_22": "6.48",
+        "layer_23": "6.11",
+        "layer_24": "6.43",
+        "layer_25": "6.37",
+        "layer_26": "6.35",
+        "layer_27": "5.77",
+        "layer_28": "6.06",
+        "layer_29": "5.83",
+        "layer_30": "5.46",
+        "layer_31": "5.12",
+        "layer_32": "5.98",
+        "layer_33": "5.68",
+        "layer_34": "5.73",
+        "layer_35": "5.18",
+        "layer_36": "5.53",
+        "layer_37": "5.20",
+        "layer_38": "5.28",
+        "layer_39": "4.81",
+        "layer_40": "5.11",
+        "layer_41": "5.16",
+        "layer_42": "5.47",
+        "layer_43": "5.43",
+        "layer_44": "5.90",
+        "layer_45": "5.85",
+        "layer_46": "6.20",
+        "layer_47": "4.34",
+        "overall_average": "6.04"
+    }
+}
