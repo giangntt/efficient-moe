@@ -97,7 +97,7 @@ def main():
 
     # Prepare arguments for simple_evaluate
     gen_kwargs = {
-        "max_new_tokens": args.max_new_tokens,
+        "max_gen_toks": args.max_new_tokens,
         "temperature": args.temperature,
         "top_p": args.top_p,
         "top_k": args.top_k,
