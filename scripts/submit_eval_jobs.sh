@@ -13,16 +13,17 @@ MODEL="$HOME/scratch/models/Qwen3-30B-A3B"
 BATCH_SIZE=8
 LIMIT=100
 DEVICES="0,1"
-MAX_PRUNED_EXPERTS_PER_LAYER=60
+MAX_PRUNED_EXPERTS_PER_LAYER=50
 OUTPUT_DIR="outputs/evaluation_results"
-STATS_DIR="outputs/statistics/max_pruned_experts_${MAX_PRUNED_EXPERTS_PER_LAYER}"
+# Reuse k=60 metadata; the eval loader slices experts[:k] so k<=60 needs no reprofiling.
+STATS_DIR="outputs/statistics/max_pruned_experts_60"
 
 TOPICS=("stem" "humanities" "other" "social_sciences")
-EXTRA_TASKS=("humaneval" "aime25")
+EXTRA_TASKS=("humaneval")
 
 PROJECT="13004345"
 QUEUE="normal"
-WALLTIME="4:00:00"
+WALLTIME="2:00:00"
 SELECT="1:ngpus=2"
 
 mkdir -p "$OUTPUT_DIR" logs
