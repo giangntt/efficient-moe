@@ -7,8 +7,8 @@
         "batch_size": 8,
         "limit": 100,
         "use_pruned_model": true,
-        "pruned_metadata": "outputs/statistics/expert_stats_humanities.json",
-        "k": 20,
+        "pruned_metadata": "outputs/statistics/max_pruned_experts_60/expert_stats_humanities.json",
+        "k": 60,
         "pruning_method": "mask",
         "device": "cuda",
         "output_file": "outputs/evaluation_results/humanities_pruned_mask.json",
@@ -20,34 +20,34 @@
         "enable_thinking": false
     },
     "latency": {
-        "eval_s": 397.42845175694674,
-        "ms_per_question": 3974.2845175694674
+        "eval_s": 348.7821895480156,
+        "ms_per_question": 3487.821895480156
     },
     "results": {
         "mmlu_humanities": {
-            "acc,none": 0.7853846153846153,
-            "acc_stderr,none": 0.010918326335985785,
+            "acc,none": 0.7715384615384615,
+            "acc_stderr,none": 0.011188155575197601,
             "alias": "humanities"
         },
         "mmlu_formal_logic": {
             "alias": " - formal_logic",
-            "acc,none": 0.67,
-            "acc_stderr,none": 0.04725815626252609
+            "acc,none": 0.66,
+            "acc_stderr,none": 0.04760952285695234
         },
         "mmlu_high_school_european_history": {
             "alias": " - high_school_european_history",
-            "acc,none": 0.85,
-            "acc_stderr,none": 0.03588702812826367
+            "acc,none": 0.84,
+            "acc_stderr,none": 0.03684529491774706
         },
         "mmlu_high_school_us_history": {
             "alias": " - high_school_us_history",
-            "acc,none": 0.93,
-            "acc_stderr,none": 0.02564323999762428
+            "acc,none": 0.91,
+            "acc_stderr,none": 0.028762349126466136
         },
         "mmlu_high_school_world_history": {
             "alias": " - high_school_world_history",
-            "acc,none": 0.89,
-            "acc_stderr,none": 0.031446603773522014
+            "acc,none": 0.86,
+            "acc_stderr,none": 0.0348735088019777
         },
         "mmlu_international_law": {
             "alias": " - international_law",
@@ -56,13 +56,13 @@
         },
         "mmlu_jurisprudence": {
             "alias": " - jurisprudence",
-            "acc,none": 0.86,
-            "acc_stderr,none": 0.0348735088019777
+            "acc,none": 0.81,
+            "acc_stderr,none": 0.039427724440366255
         },
         "mmlu_logical_fallacies": {
             "alias": " - logical_fallacies",
-            "acc,none": 0.83,
-            "acc_stderr,none": 0.03775251680686369
+            "acc,none": 0.85,
+            "acc_stderr,none": 0.03588702812826367
         },
         "mmlu_moral_disputes": {
             "alias": " - moral_disputes",
@@ -71,7 +71,7 @@
         },
         "mmlu_moral_scenarios": {
             "alias": " - moral_scenarios",
-            "acc,none": 0.52,
+            "acc,none": 0.48,
             "acc_stderr,none": 0.05021167315686783
         },
         "mmlu_philosophy": {
@@ -81,18 +81,18 @@
         },
         "mmlu_prehistory": {
             "alias": " - prehistory",
-            "acc,none": 0.85,
-            "acc_stderr,none": 0.03588702812826367
+            "acc,none": 0.83,
+            "acc_stderr,none": 0.03775251680686369
         },
         "mmlu_professional_law": {
             "alias": " - professional_law",
-            "acc,none": 0.57,
-            "acc_stderr,none": 0.049756985195624305
+            "acc,none": 0.58,
+            "acc_stderr,none": 0.04960449637488582
         },
         "mmlu_world_religions": {
             "alias": " - world_religions",
-            "acc,none": 0.82,
-            "acc_stderr,none": 0.03861229196653691
+            "acc,none": 0.79,
+            "acc_stderr,none": 0.040936018074033236
         }
     },
     "expert_activation_report": {

@@ -7,8 +7,8 @@
         "batch_size": 8,
         "limit": 100,
         "use_pruned_model": true,
-        "pruned_metadata": "outputs/statistics/expert_stats_other.json",
-        "k": 20,
+        "pruned_metadata": "outputs/statistics/max_pruned_experts_60/expert_stats_other.json",
+        "k": 60,
         "pruning_method": "mask",
         "device": "cuda",
         "output_file": "outputs/evaluation_results/other_pruned_mask.json",
@@ -20,79 +20,79 @@
         "enable_thinking": false
     },
     "latency": {
-        "eval_s": 333.76851307507604,
-        "ms_per_question": 3337.6851307507604
+        "eval_s": 396.2252920959145,
+        "ms_per_question": 3962.252920959145
     },
     "results": {
         "mmlu_other": {
-            "acc,none": 0.7907692307692308,
-            "acc_stderr,none": 0.01053582110649862,
+            "acc,none": 0.7661538461538462,
+            "acc_stderr,none": 0.011111230649049168,
             "alias": "other"
         },
         "mmlu_business_ethics": {
             "alias": " - business_ethics",
-            "acc,none": 0.85,
-            "acc_stderr,none": 0.03588702812826367
-        },
-        "mmlu_clinical_knowledge": {
-            "alias": " - clinical_knowledge",
             "acc,none": 0.82,
             "acc_stderr,none": 0.03861229196653691
         },
-        "mmlu_college_medicine": {
-            "alias": " - college_medicine",
+        "mmlu_clinical_knowledge": {
+            "alias": " - clinical_knowledge",
             "acc,none": 0.83,
             "acc_stderr,none": 0.03775251680686369
         },
+        "mmlu_college_medicine": {
+            "alias": " - college_medicine",
+            "acc,none": 0.79,
+            "acc_stderr,none": 0.040936018074033236
+        },
         "mmlu_global_facts": {
             "alias": " - global_facts",
-            "acc,none": 0.42,
-            "acc_stderr,none": 0.04960449637488583
+            "acc,none": 0.44,
+            "acc_stderr,none": 0.049888765156985884
         },
         "mmlu_human_aging": {
             "alias": " - human_aging",
-            "acc,none": 0.77,
-            "acc_stderr,none": 0.042295258468165065
+            "acc,none": 0.75,
+            "acc_stderr,none": 0.04351941398892446
         },
         "mmlu_management": {
             "alias": " - management",
-            "acc,none": 0.86,
-            "acc_stderr,none": 0.0348735088019777
+            "acc,none": 0.87,
+            "acc_stderr,none": 0.033799766898963114
         },
         "mmlu_marketing": {
             "alias": " - marketing",
-            "acc,none": 0.95,
-            "acc_stderr,none": 0.021904291355759033
-        },
-        "mmlu_medical_genetics": {
-            "alias": " - medical_genetics",
             "acc,none": 0.93,
             "acc_stderr,none": 0.02564323999762428
         },
+        "mmlu_medical_genetics": {
+            "alias": " - medical_genetics",
+            "acc,none": 0.86,
+            "acc_stderr,none": 0.0348735088019777
+        },
         "mmlu_miscellaneous": {
             "alias": " - miscellaneous",
-            "acc,none": 0.88,
-            "acc_stderr,none": 0.032659863237109045
+            "acc,none": 0.81,
+            "acc_stderr,none": 0.039427724440366255
         },
         "mmlu_nutrition": {
             "alias": " - nutrition",
-            "acc,none": 0.89,
-            "acc_stderr,none": 0.031446603773522014
+            "acc,none": 0.82,
+            "acc_stderr,none": 0.03861229196653691
         },
         "mmlu_professional_accounting": {
             "alias": " - professional_accounting",
-            "acc,none": 0.63,
-            "acc_stderr,none": 0.048523658709390974
+            "acc,none": 0.61,
+            "acc_stderr,none": 0.04902071300001973
         },
         "mmlu_professional_medicine": {
             "alias": " - professional_medicine",
-            "acc,none": 0.88,
-            "acc_stderr,none": 0.032659863237109045
+            "acc,none": 0.9,
+            "acc_stderr,none": 0.03015113445777636
         },
         "mmlu_virology": {
             "alias": " - virology",
-            "acc,none": 0.57,
-            "acc_stderr,none": 0.049756985195624305
+            "acc,none": 0.53,
+            "acc_stderr,none": 0.05016135580465919
         }
     },
     "expert_activation_report": {
