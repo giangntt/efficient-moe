@@ -20,13 +20,13 @@
         "enable_thinking": false
     },
     "latency": {
-        "eval_s": 369.42575765401125,
-        "ms_per_question": 3694.2575765401125
+        "eval_s": 333.76851307507604,
+        "ms_per_question": 3337.6851307507604
     },
     "results": {
         "mmlu_other": {
-            "acc,none": 0.7853846153846153,
-            "acc_stderr,none": 0.010642219159622867,
+            "acc,none": 0.7907692307692308,
+            "acc_stderr,none": 0.01053582110649862,
             "alias": "other"
         },
         "mmlu_business_ethics": {
@@ -36,13 +36,13 @@
         },
         "mmlu_clinical_knowledge": {
             "alias": " - clinical_knowledge",
-            "acc,none": 0.81,
-            "acc_stderr,none": 0.039427724440366255
+            "acc,none": 0.82,
+            "acc_stderr,none": 0.03861229196653691
         },
         "mmlu_college_medicine": {
             "alias": " - college_medicine",
-            "acc,none": 0.82,
-            "acc_stderr,none": 0.03861229196653691
+            "acc,none": 0.83,
+            "acc_stderr,none": 0.03775251680686369
         },
         "mmlu_global_facts": {
             "alias": " - global_facts",
@@ -51,8 +51,8 @@
         },
         "mmlu_human_aging": {
             "alias": " - human_aging",
-            "acc,none": 0.76,
-            "acc_stderr,none": 0.04292346959909278
+            "acc,none": 0.77,
+            "acc_stderr,none": 0.042295258468165065
         },
         "mmlu_management": {
             "alias": " - management",
@@ -71,18 +71,18 @@
         },
         "mmlu_miscellaneous": {
             "alias": " - miscellaneous",
-            "acc,none": 0.89,
-            "acc_stderr,none": 0.031446603773522014
+            "acc,none": 0.88,
+            "acc_stderr,none": 0.032659863237109045
         },
         "mmlu_nutrition": {
             "alias": " - nutrition",
-            "acc,none": 0.86,
-            "acc_stderr,none": 0.0348735088019777
+            "acc,none": 0.89,
+            "acc_stderr,none": 0.031446603773522014
         },
         "mmlu_professional_accounting": {
             "alias": " - professional_accounting",
-            "acc,none": 0.61,
-            "acc_stderr,none": 0.04902071300001973
+            "acc,none": 0.63,
+            "acc_stderr,none": 0.048523658709390974
         },
         "mmlu_professional_medicine": {
             "alias": " - professional_medicine",
@@ -94,5 +94,56 @@
             "acc,none": 0.57,
             "acc_stderr,none": 0.049756985195624305
         }
+    },
+    "expert_activation_report": {
+        "layer_0": "8.00",
+        "layer_1": "8.00",
+        "layer_2": "8.00",
+        "layer_3": "8.00",
+        "layer_4": "8.00",
+        "layer_5": "8.00",
+        "layer_6": "8.00",
+        "layer_7": "8.00",
+        "layer_8": "8.00",
+        "layer_9": "8.00",
+        "layer_10": "8.00",
+        "layer_11": "8.00",
+        "layer_12": "8.00",
+        "layer_13": "8.00",
+        "layer_14": "8.00",
+        "layer_15": "8.00",
+        "layer_16": "8.00",
+        "layer_17": "8.00",
+        "layer_18": "8.00",
+        "layer_19": "8.00",
+        "layer_20": "8.00",
+        "layer_21": "8.00",
+        "layer_22": "8.00",
+        "layer_23": "8.00",
+        "layer_24": "8.00",
+        "layer_25": "8.00",
+        "layer_26": "8.00",
+        "layer_27": "8.00",
+        "layer_28": "8.00",
+        "layer_29": "8.00",
+        "layer_30": "8.00",
+        "layer_31": "8.00",
+        "layer_32": "8.00",
+        "layer_33": "8.00",
+        "layer_34": "8.00",
+        "layer_35": "8.00",
+        "layer_36": "8.00",
+        "layer_37": "8.00",
+        "layer_38": "8.00",
+        "layer_39": "8.00",
+        "layer_40": "8.00",
+        "layer_41": "8.00",
+        "layer_42": "8.00",
+        "layer_43": "8.00",
+        "layer_44": "8.00",
+        "layer_45": "8.00",
+        "layer_46": "8.00",
+        "layer_47": "8.00",
+        "overall_average": "8.00"
     }
 }
