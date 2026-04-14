@@ -20,8 +20,8 @@
         "enable_thinking": false
     },
     "latency": {
-        "eval_s": 3202.5716105718166,
-        "ms_per_question": 32025.71610571817
+        "eval_s": 4636.532817608211,
+        "ms_per_question": 46365.32817608211
     },
     "results": {
         "humaneval": {
