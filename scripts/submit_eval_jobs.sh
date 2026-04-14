@@ -13,11 +13,12 @@ MODEL="$HOME/scratch/models/Qwen3-30B-A3B"
 BATCH_SIZE=8
 LIMIT=100
 DEVICES="0,1"
+MAX_PRUNED_EXPERTS_PER_LAYER=60
 OUTPUT_DIR="outputs/evaluation_results"
-STATS_DIR="outputs/statistics"
+STATS_DIR="outputs/statistics/max_pruned_experts_${MAX_PRUNED_EXPERTS_PER_LAYER}"
 
 TOPICS=("stem" "humanities" "other" "social_sciences")
-EXTRA_TASKS=("aime25" "humaneval")
+EXTRA_TASKS=("humaneval" "aime25")
 
 PROJECT="13004345"
 QUEUE="normal"
