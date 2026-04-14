@@ -7,8 +7,8 @@
         "batch_size": 8,
         "limit": 100,
         "use_pruned_model": true,
-        "pruned_metadata": "outputs/statistics/expert_stats_humaneval.json",
-        "k": 20,
+        "pruned_metadata": "outputs/statistics/max_pruned_experts_60/expert_stats_humaneval.json",
+        "k": 60,
         "pruning_method": "mask",
         "device": "cuda",
         "output_file": "outputs/evaluation_results/humaneval_pruned_mask.json",
@@ -20,14 +20,14 @@
         "enable_thinking": false
     },
     "latency": {
-        "eval_s": 4771.100035812706,
-        "ms_per_question": 47711.00035812706
+        "eval_s": 4110.629427198321,
+        "ms_per_question": 41106.294271983206
     },
     "results": {
         "humaneval": {
             "alias": "humaneval",
-            "pass@1,create_test": 0.48,
-            "pass@1_stderr,create_test": 0.05021167315686781
+            "pass@1,create_test": 0.5,
+            "pass@1_stderr,create_test": 0.050251890762960605
         }
     },
     "expert_activation_report": {
