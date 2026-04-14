@@ -81,14 +81,14 @@ submit_variants() {
     submit_eval_job \
         "eval_${NAME}_pruned_zero" \
         "${TASK}" \
-        "--use_pruned_model --pruned_metadata ${METADATA} --pruning_method zero" \
+        "--use_pruned_model --pruned_metadata ${METADATA} --pruning_method zero --k ${MAX_PRUNED_EXPERTS_PER_LAYER}" \
         "${OUTPUT_DIR}/${NAME}_pruned_zero.json"
 
     # 3. Pruned model — mask method
     submit_eval_job \
         "eval_${NAME}_pruned_mask" \
         "${TASK}" \
-        "--use_pruned_model --pruned_metadata ${METADATA} --pruning_method mask" \
+        "--use_pruned_model --pruned_metadata ${METADATA} --pruning_method mask --k ${MAX_PRUNED_EXPERTS_PER_LAYER}" \
         "${OUTPUT_DIR}/${NAME}_pruned_mask.json"
 }
 
