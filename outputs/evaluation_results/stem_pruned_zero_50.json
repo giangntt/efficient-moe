@@ -1,0 +1,179 @@
+{
+    "config": {
+        "model_name": "/home/users/ntu/hong0259/scratch/models/Qwen3-30B-A3B",
+        "tasks": [
+            "mmlu_stem"
+        ],
+        "batch_size": 8,
+        "limit": 100,
+        "use_pruned_model": true,
+        "pruned_metadata": "outputs/statistics/max_pruned_experts_60/expert_stats_stem.json",
+        "k": 50,
+        "pruning_method": "zero",
+        "device": "cuda",
+        "output_file": "outputs/evaluation_results/stem_pruned_zero.json",
+        "confirm_run_unsafe_code": true,
+        "max_new_tokens": 10000,
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "top_k": 20,
+        "enable_thinking": false
+    },
+    "latency": {
+        "eval_s": 566.4553853636608,
+        "ms_per_question": 5664.5538536366075
+    },
+    "results": {
+        "mmlu_stem": {
+            "acc,none": 0.7563157894736842,
+            "acc_stderr,none": 0.009581903020646577,
+            "alias": "stem"
+        },
+        "mmlu_abstract_algebra": {
+            "alias": " - abstract_algebra",
+            "acc,none": 0.67,
+            "acc_stderr,none": 0.04725815626252609
+        },
+        "mmlu_anatomy": {
+            "alias": " - anatomy",
+            "acc,none": 0.72,
+            "acc_stderr,none": 0.045126085985421296
+        },
+        "mmlu_astronomy": {
+            "alias": " - astronomy",
+            "acc,none": 0.87,
+            "acc_stderr,none": 0.033799766898963114
+        },
+        "mmlu_college_biology": {
+            "alias": " - college_biology",
+            "acc,none": 0.9,
+            "acc_stderr,none": 0.03015113445777636
+        },
+        "mmlu_college_chemistry": {
+            "alias": " - college_chemistry",
+            "acc,none": 0.58,
+            "acc_stderr,none": 0.04960449637488582
+        },
+        "mmlu_college_computer_science": {
+            "alias": " - college_computer_science",
+            "acc,none": 0.76,
+            "acc_stderr,none": 0.04292346959909278
+        },
+        "mmlu_college_mathematics": {
+            "alias": " - college_mathematics",
+            "acc,none": 0.64,
+            "acc_stderr,none": 0.048241815132442176
+        },
+        "mmlu_college_physics": {
+            "alias": " - college_physics",
+            "acc,none": 0.67,
+            "acc_stderr,none": 0.04725815626252609
+        },
+        "mmlu_computer_security": {
+            "alias": " - computer_security",
+            "acc,none": 0.8,
+            "acc_stderr,none": 0.04020151261036849
+        },
+        "mmlu_conceptual_physics": {
+            "alias": " - conceptual_physics",
+            "acc,none": 0.89,
+            "acc_stderr,none": 0.031446603773522014
+        },
+        "mmlu_electrical_engineering": {
+            "alias": " - electrical_engineering",
+            "acc,none": 0.86,
+            "acc_stderr,none": 0.0348735088019777
+        },
+        "mmlu_elementary_mathematics": {
+            "alias": " - elementary_mathematics",
+            "acc,none": 0.81,
+            "acc_stderr,none": 0.039427724440366255
+        },
+        "mmlu_high_school_biology": {
+            "alias": " - high_school_biology",
+            "acc,none": 0.91,
+            "acc_stderr,none": 0.028762349126466136
+        },
+        "mmlu_high_school_chemistry": {
+            "alias": " - high_school_chemistry",
+            "acc,none": 0.73,
+            "acc_stderr,none": 0.04461960433384737
+        },
+        "mmlu_high_school_computer_science": {
+            "alias": " - high_school_computer_science",
+            "acc,none": 0.87,
+            "acc_stderr,none": 0.033799766898963114
+        },
+        "mmlu_high_school_mathematics": {
+            "alias": " - high_school_mathematics",
+            "acc,none": 0.59,
+            "acc_stderr,none": 0.04943110704237104
+        },
+        "mmlu_high_school_physics": {
+            "alias": " - high_school_physics",
+            "acc,none": 0.75,
+            "acc_stderr,none": 0.04351941398892446
+        },
+        "mmlu_high_school_statistics": {
+            "alias": " - high_school_statistics",
+            "acc,none": 0.76,
+            "acc_stderr,none": 0.04292346959909278
+        },
+        "mmlu_machine_learning": {
+            "alias": " - machine_learning",
+            "acc,none": 0.59,
+            "acc_stderr,none": 0.04943110704237104
+        }
+    },
+    "expert_activation_report": {
+        "layer_0": "8.00",
+        "layer_1": "4.88",
+        "layer_2": "5.40",
+        "layer_3": "5.91",
+        "layer_4": "8.00",
+        "layer_5": "7.21",
+        "layer_6": "7.55",
+        "layer_7": "7.97",
+        "layer_8": "7.69",
+        "layer_9": "5.25",
+        "layer_10": "7.04",
+        "layer_11": "7.99",
+        "layer_12": "7.99",
+        "layer_13": "8.00",
+        "layer_14": "7.98",
+        "layer_15": "7.99",
+        "layer_16": "7.99",
+        "layer_17": "5.77",
+        "layer_18": "7.10",
+        "layer_19": "8.00",
+        "layer_20": "7.99",
+        "layer_21": "4.95",
+        "layer_22": "7.91",
+        "layer_23": "8.00",
+        "layer_24": "7.90",
+        "layer_25": "8.00",
+        "layer_26": "8.00",
+        "layer_27": "7.99",
+        "layer_28": "6.54",
+        "layer_29": "6.40",
+        "layer_30": "4.45",
+        "layer_31": "6.39",
+        "layer_32": "7.93",
+        "layer_33": "8.00",
+        "layer_34": "7.93",
+        "layer_35": "8.00",
+        "layer_36": "5.87",
+        "layer_37": "7.96",
+        "layer_38": "8.00",
+        "layer_39": "7.98",
+        "layer_40": "8.00",
+        "layer_41": "7.71",
+        "layer_42": "7.71",
+        "layer_43": "8.00",
+        "layer_44": "7.98",
+        "layer_45": "7.66",
+        "layer_46": "6.32",
+        "layer_47": "8.00",
+        "overall_average": "7.32"
+    }
+}

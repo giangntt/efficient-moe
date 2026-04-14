@@ -1,0 +1,149 @@
+{
+    "config": {
+        "model_name": "/home/users/ntu/hong0259/scratch/models/Qwen3-30B-A3B",
+        "tasks": [
+            "mmlu_humanities"
+        ],
+        "batch_size": 8,
+        "limit": 100,
+        "use_pruned_model": true,
+        "pruned_metadata": "outputs/statistics/max_pruned_experts_60/expert_stats_humanities.json",
+        "k": 50,
+        "pruning_method": "mask",
+        "device": "cuda",
+        "output_file": "outputs/evaluation_results/humanities_pruned_mask.json",
+        "confirm_run_unsafe_code": true,
+        "max_new_tokens": 10000,
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "top_k": 20,
+        "enable_thinking": false
+    },
+    "latency": {
+        "eval_s": 387.7101549208164,
+        "ms_per_question": 3877.101549208164
+    },
+    "results": {
+        "mmlu_humanities": {
+            "acc,none": 0.7769230769230769,
+            "acc_stderr,none": 0.011016150303505017,
+            "alias": "humanities"
+        },
+        "mmlu_formal_logic": {
+            "alias": " - formal_logic",
+            "acc,none": 0.65,
+            "acc_stderr,none": 0.04793724854411023
+        },
+        "mmlu_high_school_european_history": {
+            "alias": " - high_school_european_history",
+            "acc,none": 0.83,
+            "acc_stderr,none": 0.03775251680686369
+        },
+        "mmlu_high_school_us_history": {
+            "alias": " - high_school_us_history",
+            "acc,none": 0.94,
+            "acc_stderr,none": 0.023868325657594204
+        },
+        "mmlu_high_school_world_history": {
+            "alias": " - high_school_world_history",
+            "acc,none": 0.89,
+            "acc_stderr,none": 0.031446603773522014
+        },
+        "mmlu_international_law": {
+            "alias": " - international_law",
+            "acc,none": 0.93,
+            "acc_stderr,none": 0.02564323999762428
+        },
+        "mmlu_jurisprudence": {
+            "alias": " - jurisprudence",
+            "acc,none": 0.81,
+            "acc_stderr,none": 0.039427724440366255
+        },
+        "mmlu_logical_fallacies": {
+            "alias": " - logical_fallacies",
+            "acc,none": 0.83,
+            "acc_stderr,none": 0.03775251680686369
+        },
+        "mmlu_moral_disputes": {
+            "alias": " - moral_disputes",
+            "acc,none": 0.71,
+            "acc_stderr,none": 0.045604802157206865
+        },
+        "mmlu_moral_scenarios": {
+            "alias": " - moral_scenarios",
+            "acc,none": 0.48,
+            "acc_stderr,none": 0.05021167315686783
+        },
+        "mmlu_philosophy": {
+            "alias": " - philosophy",
+            "acc,none": 0.8,
+            "acc_stderr,none": 0.04020151261036849
+        },
+        "mmlu_prehistory": {
+            "alias": " - prehistory",
+            "acc,none": 0.84,
+            "acc_stderr,none": 0.03684529491774706
+        },
+        "mmlu_professional_law": {
+            "alias": " - professional_law",
+            "acc,none": 0.58,
+            "acc_stderr,none": 0.04960449637488582
+        },
+        "mmlu_world_religions": {
+            "alias": " - world_religions",
+            "acc,none": 0.81,
+            "acc_stderr,none": 0.039427724440366255
+        }
+    },
+    "expert_activation_report": {
+        "layer_0": "8.00",
+        "layer_1": "8.00",
+        "layer_2": "8.00",
+        "layer_3": "8.00",
+        "layer_4": "8.00",
+        "layer_5": "8.00",
+        "layer_6": "8.00",
+        "layer_7": "8.00",
+        "layer_8": "8.00",
+        "layer_9": "8.00",
+        "layer_10": "8.00",
+        "layer_11": "8.00",
+        "layer_12": "8.00",
+        "layer_13": "8.00",
+        "layer_14": "8.00",
+        "layer_15": "8.00",
+        "layer_16": "8.00",
+        "layer_17": "8.00",
+        "layer_18": "8.00",
+        "layer_19": "8.00",
+        "layer_20": "8.00",
+        "layer_21": "8.00",
+        "layer_22": "8.00",
+        "layer_23": "8.00",
+        "layer_24": "8.00",
+        "layer_25": "8.00",
+        "layer_26": "8.00",
+        "layer_27": "8.00",
+        "layer_28": "8.00",
+        "layer_29": "8.00",
+        "layer_30": "8.00",
+        "layer_31": "8.00",
+        "layer_32": "8.00",
+        "layer_33": "8.00",
+        "layer_34": "8.00",
+        "layer_35": "8.00",
+        "layer_36": "8.00",
+        "layer_37": "8.00",
+        "layer_38": "8.00",
+        "layer_39": "8.00",
+        "layer_40": "8.00",
+        "layer_41": "8.00",
+        "layer_42": "8.00",
+        "layer_43": "8.00",
+        "layer_44": "8.00",
+        "layer_45": "8.00",
+        "layer_46": "8.00",
+        "layer_47": "8.00",
+        "overall_average": "8.00"
+    }
+}
