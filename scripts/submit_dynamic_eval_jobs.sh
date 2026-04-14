@@ -11,14 +11,15 @@ BATCH_SIZE=8
 LIMIT=100
 DEVICES="0,1"
 OUTPUT_DIR="outputs/evaluation_results/dynamic"
+RUN_TAG="limit${LIMIT}"
 
 TOPICS=("stem" "humanities" "other" "social_sciences")
-EXTRA_TASKS=("aime25" "humaneval")
+EXTRA_TASKS=("humaneval" "aime25")
 THRESHOLDS=("0.3" "0.4" "0.5" "0.6" "0.7")
 
 PROJECT="13004345"
 QUEUE="normal"
-WALLTIME="8:00:00"
+WALLTIME="3:00:00"
 SELECT="1:ngpus=2"
 
 mkdir -p "$OUTPUT_DIR" logs
@@ -68,10 +69,10 @@ submit_threshold_sweep() {
 
     for THRESHOLD in "${THRESHOLDS[@]}"; do
         submit_dynamic_job \
-            "eval_${NAME}_dynamic_${THRESHOLD}" \
+            "eval_${NAME}_dynamic_${THRESHOLD}_${RUN_TAG}" \
             "${TASK}" \
             "${THRESHOLD}" \
-            "${OUTPUT_DIR}/${NAME}_dynamic_${THRESHOLD}.json"
+            "${OUTPUT_DIR}/${NAME}_dynamic_${THRESHOLD}_${RUN_TAG}.json"
     done
 }
 
