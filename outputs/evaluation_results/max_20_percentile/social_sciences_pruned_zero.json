@@ -1,0 +1,145 @@
+{
+    "config": {
+        "model_name": "Qwen/Qwen3-30B-A3B",
+        "tasks": [
+            "mmlu_social_sciences"
+        ],
+        "batch_size": 8,
+        "limit": 100,
+        "use_pruned_model": true,
+        "pruned_metadata": "outputs/statistics/max_pruned_experts_60_percentile/expert_stats_social_sciences.json",
+        "k": 20,
+        "include_first_last_layers": false,
+        "pruning_method": "zero",
+        "device": "cuda",
+        "output_file": "outputs/evaluation_results/max_20_percentile_exclude_first_last/social_sciences_pruned_zero.json",
+        "confirm_run_unsafe_code": true,
+        "max_new_tokens": 10000,
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "top_k": 20,
+        "enable_thinking": false
+    },
+    "latency": {
+        "eval_s": 322.58394982599566,
+        "ms_per_question": 3225.8394982599566
+    },
+    "results": {
+        "mmlu_social_sciences": {
+            "acc,none": 0.8583333333333333,
+            "acc_stderr,none": 0.009875061266485137,
+            "alias": "social sciences"
+        },
+        "mmlu_econometrics": {
+            "alias": " - econometrics",
+            "acc,none": 0.75,
+            "acc_stderr,none": 0.04351941398892446
+        },
+        "mmlu_high_school_geography": {
+            "alias": " - high_school_geography",
+            "acc,none": 0.89,
+            "acc_stderr,none": 0.031446603773522014
+        },
+        "mmlu_high_school_government_and_politics": {
+            "alias": " - high_school_government_and_politics",
+            "acc,none": 0.95,
+            "acc_stderr,none": 0.021904291355759033
+        },
+        "mmlu_high_school_macroeconomics": {
+            "alias": " - high_school_macroeconomics",
+            "acc,none": 0.87,
+            "acc_stderr,none": 0.033799766898963114
+        },
+        "mmlu_high_school_microeconomics": {
+            "alias": " - high_school_microeconomics",
+            "acc,none": 0.92,
+            "acc_stderr,none": 0.027265992434429072
+        },
+        "mmlu_high_school_psychology": {
+            "alias": " - high_school_psychology",
+            "acc,none": 0.96,
+            "acc_stderr,none": 0.019694638556693237
+        },
+        "mmlu_human_sexuality": {
+            "alias": " - human_sexuality",
+            "acc,none": 0.87,
+            "acc_stderr,none": 0.033799766898963114
+        },
+        "mmlu_professional_psychology": {
+            "alias": " - professional_psychology",
+            "acc,none": 0.83,
+            "acc_stderr,none": 0.03775251680686369
+        },
+        "mmlu_public_relations": {
+            "alias": " - public_relations",
+            "acc,none": 0.7,
+            "acc_stderr,none": 0.04605661864718383
+        },
+        "mmlu_security_studies": {
+            "alias": " - security_studies",
+            "acc,none": 0.8,
+            "acc_stderr,none": 0.04020151261036849
+        },
+        "mmlu_sociology": {
+            "alias": " - sociology",
+            "acc,none": 0.84,
+            "acc_stderr,none": 0.03684529491774706
+        },
+        "mmlu_us_foreign_policy": {
+            "alias": " - us_foreign_policy",
+            "acc,none": 0.92,
+            "acc_stderr,none": 0.027265992434429072
+        }
+    },
+    "expert_activation_report": {
+        "layer_0": "8.00",
+        "layer_1": "6.58",
+        "layer_2": "7.02",
+        "layer_3": "6.64",
+        "layer_4": "7.05",
+        "layer_5": "6.84",
+        "layer_6": "6.93",
+        "layer_7": "6.89",
+        "layer_8": "6.95",
+        "layer_9": "6.70",
+        "layer_10": "7.00",
+        "layer_11": "7.29",
+        "layer_12": "7.24",
+        "layer_13": "7.33",
+        "layer_14": "7.54",
+        "layer_15": "7.00",
+        "layer_16": "7.72",
+        "layer_17": "7.33",
+        "layer_18": "7.37",
+        "layer_19": "7.14",
+        "layer_20": "7.01",
+        "layer_21": "6.96",
+        "layer_22": "6.80",
+        "layer_23": "7.34",
+        "layer_24": "7.20",
+        "layer_25": "7.52",
+        "layer_26": "7.63",
+        "layer_27": "7.25",
+        "layer_28": "7.07",
+        "layer_29": "7.40",
+        "layer_30": "6.72",
+        "layer_31": "7.27",
+        "layer_32": "7.05",
+        "layer_33": "7.11",
+        "layer_34": "7.15",
+        "layer_35": "7.16",
+        "layer_36": "7.35",
+        "layer_37": "7.60",
+        "layer_38": "7.71",
+        "layer_39": "7.59",
+        "layer_40": "7.06",
+        "layer_41": "7.48",
+        "layer_42": "7.76",
+        "layer_43": "7.73",
+        "layer_44": "7.84",
+        "layer_45": "7.67",
+        "layer_46": "7.66",
+        "layer_47": "8.00",
+        "overall_average": "7.26"
+    }
+}

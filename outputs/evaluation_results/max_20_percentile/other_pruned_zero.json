@@ -1,0 +1,150 @@
+{
+    "config": {
+        "model_name": "Qwen/Qwen3-30B-A3B",
+        "tasks": [
+            "mmlu_other"
+        ],
+        "batch_size": 8,
+        "limit": 100,
+        "use_pruned_model": true,
+        "pruned_metadata": "outputs/statistics/max_pruned_experts_60_percentile/expert_stats_other.json",
+        "k": 20,
+        "include_first_last_layers": false,
+        "pruning_method": "zero",
+        "device": "cuda",
+        "output_file": "outputs/evaluation_results/max_20_percentile_exclude_first_last/other_pruned_zero.json",
+        "confirm_run_unsafe_code": true,
+        "max_new_tokens": 10000,
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "top_k": 20,
+        "enable_thinking": false
+    },
+    "latency": {
+        "eval_s": 343.7660880819967,
+        "ms_per_question": 3437.660880819967
+    },
+    "results": {
+        "mmlu_other": {
+            "acc,none": 0.7823076923076923,
+            "acc_stderr,none": 0.010765622661195526,
+            "alias": "other"
+        },
+        "mmlu_business_ethics": {
+            "alias": " - business_ethics",
+            "acc,none": 0.82,
+            "acc_stderr,none": 0.03861229196653691
+        },
+        "mmlu_clinical_knowledge": {
+            "alias": " - clinical_knowledge",
+            "acc,none": 0.82,
+            "acc_stderr,none": 0.03861229196653691
+        },
+        "mmlu_college_medicine": {
+            "alias": " - college_medicine",
+            "acc,none": 0.81,
+            "acc_stderr,none": 0.039427724440366255
+        },
+        "mmlu_global_facts": {
+            "alias": " - global_facts",
+            "acc,none": 0.43,
+            "acc_stderr,none": 0.049756985195624305
+        },
+        "mmlu_human_aging": {
+            "alias": " - human_aging",
+            "acc,none": 0.77,
+            "acc_stderr,none": 0.042295258468165065
+        },
+        "mmlu_management": {
+            "alias": " - management",
+            "acc,none": 0.86,
+            "acc_stderr,none": 0.0348735088019777
+        },
+        "mmlu_marketing": {
+            "alias": " - marketing",
+            "acc,none": 0.96,
+            "acc_stderr,none": 0.019694638556693237
+        },
+        "mmlu_medical_genetics": {
+            "alias": " - medical_genetics",
+            "acc,none": 0.91,
+            "acc_stderr,none": 0.028762349126466136
+        },
+        "mmlu_miscellaneous": {
+            "alias": " - miscellaneous",
+            "acc,none": 0.88,
+            "acc_stderr,none": 0.032659863237109045
+        },
+        "mmlu_nutrition": {
+            "alias": " - nutrition",
+            "acc,none": 0.84,
+            "acc_stderr,none": 0.03684529491774706
+        },
+        "mmlu_professional_accounting": {
+            "alias": " - professional_accounting",
+            "acc,none": 0.61,
+            "acc_stderr,none": 0.04902071300001973
+        },
+        "mmlu_professional_medicine": {
+            "alias": " - professional_medicine",
+            "acc,none": 0.88,
+            "acc_stderr,none": 0.032659863237109045
+        },
+        "mmlu_virology": {
+            "alias": " - virology",
+            "acc,none": 0.58,
+            "acc_stderr,none": 0.04960449637488582
+        }
+    },
+    "expert_activation_report": {
+        "layer_0": "8.00",
+        "layer_1": "6.22",
+        "layer_2": "7.16",
+        "layer_3": "7.08",
+        "layer_4": "6.81",
+        "layer_5": "6.96",
+        "layer_6": "6.70",
+        "layer_7": "6.72",
+        "layer_8": "6.77",
+        "layer_9": "7.19",
+        "layer_10": "6.83",
+        "layer_11": "7.38",
+        "layer_12": "7.03",
+        "layer_13": "7.65",
+        "layer_14": "7.51",
+        "layer_15": "7.31",
+        "layer_16": "7.51",
+        "layer_17": "7.26",
+        "layer_18": "7.01",
+        "layer_19": "6.96",
+        "layer_20": "6.97",
+        "layer_21": "7.16",
+        "layer_22": "7.02",
+        "layer_23": "7.44",
+        "layer_24": "7.15",
+        "layer_25": "7.43",
+        "layer_26": "7.48",
+        "layer_27": "7.57",
+        "layer_28": "7.15",
+        "layer_29": "7.26",
+        "layer_30": "6.44",
+        "layer_31": "7.22",
+        "layer_32": "6.87",
+        "layer_33": "7.36",
+        "layer_34": "7.51",
+        "layer_35": "7.56",
+        "layer_36": "7.15",
+        "layer_37": "7.23",
+        "layer_38": "7.56",
+        "layer_39": "7.61",
+        "layer_40": "7.18",
+        "layer_41": "7.22",
+        "layer_42": "7.48",
+        "layer_43": "7.79",
+        "layer_44": "7.63",
+        "layer_45": "7.63",
+        "layer_46": "7.74",
+        "layer_47": "8.00",
+        "overall_average": "7.25"
+    }
+}
