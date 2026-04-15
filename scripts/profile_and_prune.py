@@ -118,6 +118,12 @@ def parse_args():
         default=None,
         help='List of layer indices to prune (default: all layers except 0 and last)'
     )
+    parser.add_argument(
+        '--include_first_last_layers',
+        action='store_true',
+        default=False,
+        help='Include first and last transformer layers in pruning when --layers_to_prune is not specified'
+    )
     
     # Model and device
     parser.add_argument(
@@ -304,9 +310,12 @@ def determine_experts_to_prune(stats, router_logits, args):
     
     # Determine layers to prune
     if args.layers_to_prune is None:
-        # Default: all layers except first and last
+        # Default: all layers except first and last (unless explicitly included)
         all_layers = sorted(stats.keys())
-        layers_to_prune = [l for l in all_layers if l != 0 and l != all_layers[-1]]
+        if args.include_first_last_layers:
+            layers_to_prune = all_layers
+        else:
+            layers_to_prune = [l for l in all_layers if l != 0 and l != all_layers[-1]]
     else:
         layers_to_prune = args.layers_to_prune
     
@@ -395,16 +404,20 @@ def determine_experts_to_prune(stats, router_logits, args):
             # Pruning rule: both values below their thresholds
             pruned_mask = (mean_act < mean_threshold) & (var_act < var_threshold)
         
-        # Limit to max_pruned_experts_per_layer
         pruned_indices = np.where(pruned_mask)[0]
-        if len(pruned_indices) > args.max_pruned_experts_per_layer:
-            # Keep the ones with lowest mean_act (or mean_act_norm if using normalized methods)
+        if len(pruned_indices) > 0:
+            # Always sort candidates by ascending activation score so order is stable
+            # regardless of whether we need to truncate to max_pruned_experts_per_layer.
             if args.threshold_method in ['dynamic', 'absolute']:
                 sort_values = mean_act_norm[pruned_indices]
             else:
                 sort_values = mean_act[pruned_indices]
             idx_sort = np.argsort(sort_values)
-            pruned_indices = pruned_indices[idx_sort[:args.max_pruned_experts_per_layer]]
+            pruned_indices = pruned_indices[idx_sort]
+
+            # Limit to max_pruned_experts_per_layer after sorting
+            if len(pruned_indices) > args.max_pruned_experts_per_layer:
+                pruned_indices = pruned_indices[:args.max_pruned_experts_per_layer]
         
         if len(pruned_indices) > 0:
             experts_to_prune[layer_id] = pruned_indices.tolist()
