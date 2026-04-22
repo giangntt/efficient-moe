@@ -1,6 +1,6 @@
 # Efficient MoE: Mixture-of-Experts Model Pruning and Analysis
 
-A comprehensive research toolkit for analyzing, profiling, and pruning Mixture-of-Experts (MoE) models to improve their efficiency and understand their behavior. This project focuses on the **Qwen1.5-MoE-A2.7B** model and provides tools for expert activation analysis, router behavior profiling, correlation analysis, and model pruning with performance evaluation.
+A comprehensive research toolkit for analyzing, profiling, and pruning Mixture-of-Experts (MoE) models to improve their efficiency and understand their behavior. This project includes experiments on **Qwen/Qwen3-30B-A3B** and supports **Qwen/Qwen1.5-MoE-A2.7B**, with tools for expert activation analysis, router behavior profiling, correlation analysis, and model pruning with performance evaluation.
 
 ## 📋 Table of Contents
 
@@ -10,6 +10,7 @@ A comprehensive research toolkit for analyzing, profiling, and pruning Mixture-o
 - [Project Structure](#-project-structure)
 - [Core Components](#-core-components)
 - [Usage Guide](#-usage-guide)
+- [Results](#-results)
 - [Analysis Notebooks](#-analysis-notebooks)
 - [Configuration](#-configuration)
 - [Evaluation Tasks](#-evaluation-tasks)
@@ -46,7 +47,7 @@ Install the required packages:
 
 ```bash
 # Install PyTorch with CUDA support
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+pip install torch torchvision torchaudio
 
 # Install core dependencies
 pip install transformers datasets lm-eval matplotlib seaborn tqdm numpy
@@ -59,7 +60,7 @@ pip install transformers datasets lm-eval matplotlib seaborn tqdm numpy
 Evaluate the model on standard benchmarks:
 
 ```bash
-python scripts/evaluation.py --tasks mmlu --batch_size 8 --limit 100 --device cuda --model_name Qwen/Qwen1.5-MoE-A2.7B
+python scripts/evaluation.py --tasks mmlu --batch_size 8 --limit 100 --device cuda --model_name Qwen/Qwen3-30B-A3B
 ```
 
 ### 2. Profile Model and Determine Experts to Prune
@@ -68,7 +69,7 @@ Profile the model on MMLU prompts and generate expert pruning metadata:
 
 ```bash
 python scripts/profile_and_prune.py \
-    --model_name Qwen/Qwen1.5-MoE-A2.7B \ 
+    --model_name Qwen/Qwen3-30B-A3B \ 
     --mmlu_topic stem \
     --sample_size 5 \
     --output_file outputs/statistics/expert_stats.json \
@@ -81,7 +82,7 @@ Evaluate a pruned model using pre-computed expert rankings:
 
 ```bash
 python scripts/evaluation.py \
-    --model_name Qwen/Qwen1.5-MoE-A2.7B \ 
+    --model_name Qwen/Qwen3-30B-A3B \ 
     --tasks mmlu \
     --batch_size 8 \
     --limit 100 \
@@ -140,6 +141,39 @@ efficient_moe/
     └── statistics/                     # Statistical analysis outputs
 ```
 
+## 📊 Results
+
+The following results are from `outputs/evaluation_results/` for **Qwen/Qwen3-30B-A3B**.
+
+### MMLU category accuracy (original vs. pruned)
+
+| Category | Original | Mask k=50 | Zero k=50 | Mask k=60 | Zero k=60 |
+|---|---:|---:|---:|---:|---:|
+| Humanities | 0.7869 | 0.7769 | 0.7792 | 0.7715 | 0.7746 |
+| Social Sciences | 0.8600 | 0.8508 | 0.8542 | 0.8517 | 0.8500 |
+| STEM | 0.7689 | 0.7542 | 0.7563 | 0.7463 | 0.7500 |
+| Other | 0.7869 | 0.7631 | 0.7669 | 0.7662 | 0.7600 |
+
+### HumanEval pass@1 (original vs. pruned)
+
+| Setting | pass@1 |
+|---|---:|
+| Original | 0.45 |
+| Mask k=50 | 0.51 |
+| Zero k=50 | 0.51 |
+| Mask k=60 | 0.50 |
+| Zero k=60 | 0.49 |
+
+### Dynamic routing results (best threshold by task)
+
+| Task | Best threshold | Best score |
+|---|---:|---:|
+| MMLU Humanities | 0.7 | 0.7900 |
+| MMLU Social Sciences | 0.6 | 0.8633 |
+| MMLU STEM | 0.4 | 0.7711 |
+| MMLU Other | 0.7 | 0.7862 |
+| HumanEval (limit=100) | 0.5 | 0.48 |
+
 ## 🔧 Core Components
 
 ### 1. Evaluation Script (`scripts/evaluation.py`)
@@ -152,7 +186,7 @@ python scripts/evaluation.py [OPTIONS]
 ```
 
 **Key Options:**
-- `--model_name`: Name or path of the model to profile & prune (default: `Qwen/Qwen1.5-MoE-A2.7B`)
+- `--model_name`: Name or path of the model to profile & prune (default in script: `Qwen/Qwen1.5-MoE-A2.7B`, commonly used: `Qwen/Qwen3-30B-A3B`)
 - `--tasks`: List of evaluation tasks (e.g., `mmlu`, `gsm8k`, `wikitext`)
 - `--batch_size`: Batch size for evaluation (default: 8)
 - `--limit`: Limit number of examples for quick testing
@@ -166,7 +200,7 @@ python scripts/evaluation.py [OPTIONS]
 **Example:**
 ```bash
 python scripts/evaluation.py \
-    --model_name Qwen/Qwen1.5-MoE-A2.7B \ 
+    --model_name Qwen/Qwen3-30B-A3B \ 
     --tasks mmlu gsm8k \
     --batch_size 16 \
     --use_pruned_model \
@@ -186,7 +220,7 @@ python scripts/profile_and_prune.py [OPTIONS]
 ```
 
 **Key Options:**
-- `--model_name`: Name or path of the model to profile & prune (default: `Qwen/Qwen1.5-MoE-A2.7B`)
+- `--model_name`: Name or path of the model to profile & prune (default in script: `Qwen/Qwen1.5-MoE-A2.7B`, commonly used: `Qwen/Qwen3-30B-A3B`)
 - `--prompts_file`: Path to JSON file with prompt strings
 - `--mmlu_topic`: MMLU topic category (`humanities`, `stem`, `social_sciences`, `other`)
 - `--gsm8k`: Use GSM8K dataset for prompts
@@ -197,7 +231,7 @@ python scripts/profile_and_prune.py [OPTIONS]
 **Example:**
 ```bash
 python scripts/profile_and_prune.py \
-    --model_name Qwen/Qwen1.5-MoE-A2.7B \ 
+    --model_name Qwen/Qwen3-30B-A3B \ 
     --mmlu_topic stem \
     --sample_size 10 \
     --output_file outputs/statistics/stem_experts.json \
@@ -293,7 +327,7 @@ from utils.common_utils import get_experts_to_prune_from_json
 from transformers import AutoModelForCausalLM
 
 # Load model
-model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen1.5-MoE-A2.7B")
+model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen3-30B-A3B")
 
 # Load expert pruning metadata
 experts_to_prune = get_experts_to_prune_from_json(
@@ -372,7 +406,7 @@ These notebooks provide:
 
 ### Model Configuration
 
-The project is configured for the **Qwen1.5-MoE-A2.7B** model by default. To use a different model:
+The scripts currently default to **Qwen/Qwen1.5-MoE-A2.7B**, and this repo includes runs with **Qwen/Qwen3-30B-A3B**. To use a different model:
 
 1. Update the `model_name` variable in scripts or notebooks
 2. Ensure the model has MoE layers with the expected structure
